@@ -420,11 +420,23 @@ button {
   color: var(--text);
 }
 
+.transportBtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .bpmControl {
   display: flex;
   align-items: center;
   gap: 6px;
   color: var(--text-faint);
+}
+
+.editControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .bpmControl input[type="number"] {

@@ -3,6 +3,7 @@ import {
 } from 'solid-js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange } from '../lib/beatGrid.js';
+import { snapToGrid } from '../lib/snap.js';
 import { formatClock } from '../lib/format.js';
 import PlayPauseButton from './PlayPauseButton.jsx';
 
@@ -150,7 +151,9 @@ export default function Timeline(props) {
       if (!dragged) {
         const rect = viewportEl.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        props.onSeek(scrollOffset() + x / pxPerSecond());
+        const t = scrollOffset() + x / pxPerSecond();
+        const tl = props.config.timeline || {};
+        props.onSeek(props.snapEnabled() ? snapToGrid(t, props.bpm(), tl.gridOffset || 0) : t);
       } else {
         markInteracting();
       }
@@ -507,6 +510,17 @@ export default function Timeline(props) {
               value={props.bpm() ?? ''}
               onInput={onBpmInput}
             />
+          </div>
+          <div class="editControls">
+            <button
+              type="button"
+              class="transportBtn"
+              classList={{ active: props.snapEnabled() }}
+              onClick={props.onToggleSnap}
+              title="Snap to grid (cursor clicks and block resizing)"
+            >
+              ⌗
+            </button>
           </div>
         </div>
         <div class="transportControls">

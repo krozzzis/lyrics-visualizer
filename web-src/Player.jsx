@@ -31,6 +31,7 @@ export default function Player(props) {
   const [showSettings, setShowSettings] = createSignal(false);
   const [volume, setVolume] = createSignal(1);
   const [muted, setMuted] = createSignal(false);
+  const [snapEnabled, setSnapEnabled] = createSignal(false);
 
   const sidebarPanel = createResizablePanel('sidebar', {
     defaultSize: 300, min: 200, max: 520, axis: 'x',
@@ -167,6 +168,8 @@ export default function Player(props) {
           onVolumeChange={setVolume}
           muted={muted}
           onToggleMute={() => setMuted((v) => !v)}
+          snapEnabled={snapEnabled}
+          onToggleSnap={() => setSnapEnabled((v) => !v)}
         />
       </div>
       <Show when={showSettings()}>
