@@ -56,6 +56,7 @@ export default function Timeline(props) {
   const [peakData, setPeakData] = createSignal(null);
   const [userInteracting, setUserInteracting] = createSignal(false);
   const [fitted, setFitted] = createSignal(false);
+  const [editingIndex, setEditingIndex] = createSignal(-1);
 
   let interactingTimer;
   function markInteracting() {
@@ -171,15 +172,23 @@ export default function Timeline(props) {
       zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15);
     }
 
+    function onDblClick(e) {
+      const rect = viewportEl.getBoundingClientRect();
+      const i = cueIndexAt(e.clientX - rect.left, e.clientY - rect.top);
+      if (i >= 0) setEditingIndex(i);
+    }
+
     viewportEl.addEventListener('pointerdown', onPointerDown);
     viewportEl.addEventListener('pointermove', onPointerMove);
     viewportEl.addEventListener('pointerup', onPointerUp);
     viewportEl.addEventListener('wheel', onWheel, { passive: false });
+    viewportEl.addEventListener('dblclick', onDblClick);
     onCleanup(() => {
       viewportEl.removeEventListener('pointerdown', onPointerDown);
       viewportEl.removeEventListener('pointermove', onPointerMove);
       viewportEl.removeEventListener('pointerup', onPointerUp);
       viewportEl.removeEventListener('wheel', onWheel);
+      viewportEl.removeEventListener('dblclick', onDblClick);
     });
   });
 
@@ -291,6 +300,39 @@ export default function Timeline(props) {
     ctx.closePath();
   }
 
+  // Cue block row geometry — shared between draw() and hit-testing (used by
+  // double-click-to-edit and the text-edit input overlay), so they can never
+  // silently drift apart.
+  function blockGeometry() {
+    const { height } = containerSize();
+    const contentH = height - RULER_H;
+    const waveH = contentH * WAVE_FRACTION;
+    const blockY = RULER_H + waveH + 6;
+    const blockH = height - blockY - 6;
+    return {
+      waveH, blockY, blockH,
+    };
+  }
+
+  function cueScreenX(cue) {
+    const px = pxPerSecond();
+    const start = scrollOffset();
+    const x1 = (cue.start - start) * px;
+    const x2 = (cue.end - start) * px;
+    return { x1, x2, w: Math.max(2, x2 - x1) };
+  }
+
+  // Index of the cue block under viewport-relative (x, y), or -1.
+  function cueIndexAt(x, y) {
+    const { blockY, blockH } = blockGeometry();
+    if (y < blockY || y > blockY + blockH) return -1;
+    for (let i = 0; i < props.cues.length; i += 1) {
+      const { x1, x2 } = cueScreenX(props.cues[i]);
+      if (x >= x1 && x <= x2) return i;
+    }
+    return -1;
+  }
+
   function draw() {
     if (!canvasEl) return;
     const { width, height } = containerSize();
@@ -314,10 +356,7 @@ export default function Timeline(props) {
     const beatsPerBar = tl.beatsPerBar || 4;
     const gridOffset = tl.gridOffset || 0;
 
-    const contentH = height - RULER_H;
-    const waveH = contentH * WAVE_FRACTION;
-    const blockY = RULER_H + waveH + 6;
-    const blockH = height - blockY - 6;
+    const { waveH, blockY, blockH } = blockGeometry();
 
     // Beat grid (drawn first, under everything else in the content area)
     const beats = beatsInRange(bpm, beatsPerBar, gridOffset, start, end);
@@ -464,6 +503,27 @@ export default function Timeline(props) {
     props.onBpmChange(Number.isFinite(v) && v > 0 ? v : null);
   }
 
+  // Screen-space rect for the text-edit <input> overlaid on the block being
+  // edited — tracks the same reactive inputs draw() does so it stays glued
+  // to the block through pan/zoom while open.
+  const editingRect = createMemo(() => {
+    const i = editingIndex();
+    if (i < 0 || !props.cues[i]) return null;
+    const { blockY, blockH } = blockGeometry();
+    const { x1, w } = cueScreenX(props.cues[i]);
+    return {
+      left: x1, top: blockY, width: w, height: blockH,
+    };
+  });
+
+  function commitEdit(el) {
+    const i = editingIndex();
+    setEditingIndex(-1);
+    if (i < 0) return;
+    const text = el.value.trim();
+    if (text && text !== props.cues[i].text) props.onEditText(i, text);
+  }
+
   // Same step the global ArrowLeft/ArrowRight shortcuts use: one beat when
   // there's a tempo, else a flat 5s — so the buttons and keyboard agree.
   function skipStep() {
@@ -573,6 +633,27 @@ export default function Timeline(props) {
         <div id="timelineMain">
           <div id="timelineViewport" ref={viewportEl}>
             <canvas id="timelineCanvas" ref={canvasEl} />
+            <Show when={editingRect()}>
+              {(rect) => (
+                <input
+                  class="blockTextEdit"
+                  style={{
+                    left: `${rect().left}px`,
+                    top: `${rect().top}px`,
+                    width: `${rect().width}px`,
+                    height: `${rect().height}px`,
+                  }}
+                  value={props.cues[editingIndex()].text}
+                  autofocus
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                    else if (e.key === 'Escape') setEditingIndex(-1);
+                  }}
+                  onBlur={(e) => commitEdit(e.currentTarget)}
+                />
+              )}
+            </Show>
           </div>
           <div id="timelineScrollbar" ref={scrollbarTrackEl}>
             <div

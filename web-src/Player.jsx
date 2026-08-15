@@ -9,6 +9,7 @@ import Timeline from './components/Timeline.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import { activeCueIndexAtTime } from './lib/cueIndex.js';
 import { createResizablePanel } from './lib/resizable.js';
+import { wordsFromText } from './lib/words.js';
 
 function isTextEntry(el) {
   if (!el) return false;
@@ -52,6 +53,35 @@ export default function Player(props) {
   const duration = () => (usingAudio && audioDuration() ? audioDuration() : fallbackDuration());
 
   const activeCueIndex = createMemo(() => activeCueIndexAtTime(cues, currentTime()));
+
+  // Cue edits (text, and later resize/slice) apply to the local store
+  // immediately — Stage/Timeline pick them up reactively — and persist to
+  // the native cue file right away rather than requiring an explicit Save
+  // step like the settings panel does: unlike config (a batch of unrelated
+  // tweaks), each cue edit is already a single, deliberate, complete action.
+  async function persistCues() {
+    try {
+      const body = JSON.stringify({
+        cues: cues.map((c) => ({ start: c.start, end: c.end, text: c.text })),
+      });
+      const res = await fetch('/api/cues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to save cue edit:', err);
+    }
+  }
+
+  function setCueText(index, text) {
+    setCues(index, 'text', text);
+    setCues(index, 'words', wordsFromText(text));
+    persistCues();
+  }
 
   const audioEl = new Audio();
   if (usingAudio) {
@@ -140,7 +170,13 @@ export default function Player(props) {
 
   return (
     <div id="app">
-      <Sidebar cues={cues} activeIndex={activeCueIndex} onSeek={seekTo} width={sidebarPanel.size} />
+      <Sidebar
+        cues={cues}
+        activeIndex={activeCueIndex}
+        onSeek={seekTo}
+        width={sidebarPanel.size}
+        onEditText={setCueText}
+      />
       <div class="resizeHandleV" onPointerDown={sidebarPanel.onHandlePointerDown} />
       <div class="main">
         <ControlsBar
@@ -171,6 +207,7 @@ export default function Player(props) {
           onToggleMute={() => setMuted((v) => !v)}
           snapEnabled={snapEnabled}
           onToggleSnap={() => setSnapEnabled((v) => !v)}
+          onEditText={setCueText}
         />
       </div>
       <Show when={showSettings()}>
