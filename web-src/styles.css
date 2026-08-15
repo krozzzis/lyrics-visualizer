@@ -180,10 +180,10 @@ button {
 }
 
 .playBtn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--accent-text);
   display: flex;
@@ -196,6 +196,7 @@ button {
 
 .playBtn:hover {
   background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 .playBtn:active {
@@ -203,8 +204,8 @@ button {
 }
 
 .playBtn svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .timeDisplay {
@@ -363,8 +364,8 @@ button {
 }
 
 .transportBtn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--panel-alt);
@@ -375,6 +376,11 @@ button {
   justify-content: center;
   font-size: 13px;
   line-height: 1;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.transportBtn:active {
+  transform: scale(0.94);
 }
 
 .transportBtn:hover {
@@ -498,7 +504,6 @@ button {
     linear-gradient(180deg, #6a6d7c 0%, #3a3c48 50%, #26272f 100%);
   border: 1px solid #050506;
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  margin-left: -18px;
   cursor: grab;
 }
 
