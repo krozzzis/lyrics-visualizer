@@ -414,6 +414,18 @@ export default function Timeline(props) {
     if (next) props.onSeek(next.start);
   }
 
+  // Reaper-style transport readout: current bar (only meaningful once a
+  // tempo grid exists) alongside the exact playhead position in seconds.
+  function currentBar(t) {
+    const bpm = props.bpm();
+    if (!bpm) return null;
+    const tl = props.config.timeline || {};
+    const beatsPerBar = tl.beatsPerBar || 4;
+    const gridOffset = tl.gridOffset || 0;
+    const barDuration = (60 / bpm) * beatsPerBar;
+    return Math.floor((t - gridOffset) / barDuration) + 1;
+  }
+
   return (
     <div id="timeline">
       <div id="timelineHeader">
@@ -434,6 +446,12 @@ export default function Timeline(props) {
             value={props.bpm() ?? ''}
             onInput={onBpmInput}
           />
+        </div>
+        <div class="positionDisplay">
+          {currentBar(props.currentTime()) !== null && (
+            <span class="posBar">Bar {currentBar(props.currentTime())}</span>
+          )}
+          <span class="posSeconds">{props.currentTime().toFixed(3)}s</span>
         </div>
         <div class="spacer" />
         <Show when={props.usingAudio}>

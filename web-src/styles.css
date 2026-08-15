@@ -358,6 +358,18 @@ button {
   border-color: var(--accent);
 }
 
+.positionDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.posBar {
+  color: var(--text-dim);
+}
+
 .volumeControl {
   display: flex;
   align-items: center;
