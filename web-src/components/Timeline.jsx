@@ -30,6 +30,7 @@ const WAVE_FRACTION = 0.58; // portion of the non-ruler height given to the wave
 const MIN_PX_PER_SECOND = 4;
 const MAX_PX_PER_SECOND = 900;
 const DRAG_THRESHOLD = 4;
+const EDGE_HIT_PX = 6; // hit-test tolerance for grabbing a cue block's edge to resize
 const AUTO_FOLLOW_MARGIN = 0.15; // re-center once playhead leaves [margin, 1-margin] of width
 const AUTO_FOLLOW_TARGET = 0.3; // where the playhead lands after re-centering
 const MIN_THUMB_PX = 24;
@@ -119,14 +120,38 @@ export default function Timeline(props) {
     }
   });
 
-  // --- pointer interaction: click to seek, drag to pan ---
+  // Cue block edge under viewport-relative (x, y), for resize hit-testing —
+  // returns { index, edge: 'start' | 'end' } or null. Checked against every
+  // cue rather than just the visible range since EDGE_HIT_PX is tiny next to
+  // a block's full width, so a stray hit outside the row is cheap to rule
+  // out via the y check first.
+  function resizeHandleAt(x, y) {
+    const { blockY, blockH } = blockGeometry();
+    if (y < blockY - 2 || y > blockY + blockH + 2) return null;
+    for (let i = 0; i < props.cues.length; i += 1) {
+      const { x1, x2 } = cueScreenX(props.cues[i]);
+      if (Math.abs(x - x2) <= EDGE_HIT_PX) return { index: i, edge: 'end' };
+      if (Math.abs(x - x1) <= EDGE_HIT_PX) return { index: i, edge: 'start' };
+    }
+    return null;
+  }
+
+  // --- pointer interaction: click to seek, drag to pan, drag an edge to resize ---
   onMount(() => {
     let dragging = false;
     let dragged = false;
     let startX = 0;
     let startOffset = 0;
+    let resizing = null; // { index, edge } while a resize drag is active
 
     function onPointerDown(e) {
+      const rect = viewportEl.getBoundingClientRect();
+      const hit = resizeHandleAt(e.clientX - rect.left, e.clientY - rect.top);
+      if (hit) {
+        resizing = hit;
+        viewportEl.setPointerCapture(e.pointerId);
+        return;
+      }
       dragging = true;
       dragged = false;
       startX = e.clientX;
@@ -136,16 +161,32 @@ export default function Timeline(props) {
     }
 
     function onPointerMove(e) {
-      if (!dragging) return;
-      const dx = e.clientX - startX;
-      if (Math.abs(dx) > DRAG_THRESHOLD) dragged = true;
-      if (dragged) {
-        markInteracting();
-        setScrollOffset(clampScroll(startOffset - dx / pxPerSecond()));
+      const rect = viewportEl.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+
+      if (resizing) {
+        props.onResizeCue(resizing.index, resizing.edge, scrollOffset() + x / pxPerSecond());
+        return;
       }
+      if (dragging) {
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > DRAG_THRESHOLD) dragged = true;
+        if (dragged) {
+          markInteracting();
+          setScrollOffset(clampScroll(startOffset - dx / pxPerSecond()));
+        }
+        return;
+      }
+      // Not interacting: just hover feedback for the resize cursor.
+      viewportEl.classList.toggle('resizeHover', !!resizeHandleAt(x, e.clientY - rect.top));
     }
 
     function onPointerUp(e) {
+      if (resizing) {
+        resizing = null;
+        props.onResizeCommit();
+        return;
+      }
       if (!dragging) return;
       dragging = false;
       viewportEl.classList.remove('dragging');
@@ -592,6 +633,15 @@ export default function Timeline(props) {
               title="Slice the block under the cursor in two (S)"
             >
               ✂
+            </button>
+            <button
+              type="button"
+              class="transportBtn"
+              classList={{ active: props.linkResize() }}
+              onClick={props.onToggleLinkResize}
+              title="Linked resize: dragging a shared border resizes both blocks"
+            >
+              🔗
             </button>
           </div>
         </div>

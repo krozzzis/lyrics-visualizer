@@ -10,6 +10,7 @@ import SettingsPanel from './components/SettingsPanel.jsx';
 import { activeCueIndexAtTime } from './lib/cueIndex.js';
 import { createResizablePanel } from './lib/resizable.js';
 import { wordsFromText } from './lib/words.js';
+import { snapToGrid } from './lib/snap.js';
 
 function isTextEntry(el) {
   if (!el) return false;
@@ -34,6 +35,7 @@ export default function Player(props) {
   const [volume, setVolume] = createSignal(1);
   const [muted, setMuted] = createSignal(false);
   const [snapEnabled, setSnapEnabled] = createSignal(false);
+  const [linkResize, setLinkResize] = createSignal(false);
 
   const sidebarPanel = createResizablePanel('sidebar', {
     defaultSize: 300, min: 200, max: 520, axis: 'x',
@@ -106,6 +108,43 @@ export default function Player(props) {
       { start: t, end: cue.end, text: secondWords.map((w) => w.text).join(' '), words: secondWords },
       ...cues.slice(idx + 1),
     ]);
+    persistCues();
+  }
+
+  const MIN_CUE_DURATION = 0.05;
+  const EDGE_EPSILON = 0.001; // tolerance for "two blocks share a border"
+
+  // Drags a cue's start or end edge to rawTime (snapped first, if enabled),
+  // clamped so it can never shrink past MIN_CUE_DURATION or overlap a
+  // neighbor. With linkResize on, if the dragged edge currently sits exactly
+  // on a neighbor's opposite edge (within EDGE_EPSILON), that neighbor's
+  // edge is dragged along with it — otherwise the neighbor is untouched and
+  // the shared-border clamp just prevents crossing into it, same as if
+  // linking were off. Called continuously during a drag; not persisted here
+  // (see commitCueResize) so a drag doesn't flood the server with saves.
+  function resizeCueEdge(index, edge, rawTime) {
+    const tl = config.timeline || {};
+    const t = snapEnabled() ? snapToGrid(rawTime, tl.bpm, tl.gridOffset || 0) : rawTime;
+    const cue = cues[index];
+
+    if (edge === 'end') {
+      const next = cues[index + 1];
+      const linked = linkResize() && next && Math.abs(cue.end - next.start) < EDGE_EPSILON;
+      const upper = linked ? next.end - MIN_CUE_DURATION : (next ? next.start : duration());
+      const clamped = Math.min(upper, Math.max(cue.start + MIN_CUE_DURATION, t));
+      setCues(index, 'end', clamped);
+      if (linked) setCues(index + 1, 'start', clamped);
+    } else {
+      const prev = cues[index - 1];
+      const linked = linkResize() && prev && Math.abs(cue.start - prev.end) < EDGE_EPSILON;
+      const lower = linked ? prev.start + MIN_CUE_DURATION : (prev ? prev.end : 0);
+      const clamped = Math.max(lower, Math.min(cue.end - MIN_CUE_DURATION, t));
+      setCues(index, 'start', clamped);
+      if (linked) setCues(index - 1, 'end', clamped);
+    }
+  }
+
+  function commitCueResize() {
     persistCues();
   }
 
@@ -238,6 +277,10 @@ export default function Player(props) {
           onToggleSnap={() => setSnapEnabled((v) => !v)}
           onEditText={setCueText}
           onSlice={sliceAtCursor}
+          linkResize={linkResize}
+          onToggleLinkResize={() => setLinkResize((v) => !v)}
+          onResizeCue={resizeCueEdge}
+          onResizeCommit={commitCueResize}
         />
       </div>
       <Show when={showSettings()}>

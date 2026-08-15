@@ -626,6 +626,10 @@ button {
   cursor: grabbing;
 }
 
+#timelineViewport.resizeHover {
+  cursor: ew-resize;
+}
+
 #timelineCanvas {
   display: block;
   width: 100%;
