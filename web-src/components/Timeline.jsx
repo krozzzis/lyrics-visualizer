@@ -585,6 +585,14 @@ export default function Timeline(props) {
             >
               ⌗
             </button>
+            <button
+              type="button"
+              class="transportBtn"
+              onClick={props.onSlice}
+              title="Slice the block under the cursor in two (S)"
+            >
+              ✂
+            </button>
           </div>
         </div>
         <div class="transportControls">

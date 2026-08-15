@@ -83,6 +83,32 @@ export default function Player(props) {
     persistCues();
   }
 
+  // Splits the cue under the playhead into two at the current time, dividing
+  // its words proportionally to where the cut falls (mirrors the char-
+  // weighted timing synthesis in src/word-timing.js) rather than duplicating
+  // the whole line into both halves. No-op off a cue or on a single-word
+  // cue, where there's nothing meaningful to divide.
+  function sliceAtCursor() {
+    const t = currentTime();
+    const idx = cues.findIndex((c) => t > c.start && t < c.end);
+    if (idx < 0) return;
+    const cue = cues[idx];
+    if (cue.words.length < 2) return;
+
+    const frac = (t - cue.start) / (cue.end - cue.start);
+    const splitAt = Math.min(cue.words.length - 1, Math.max(1, Math.round(frac * cue.words.length)));
+    const firstWords = cue.words.slice(0, splitAt).map((w) => ({ text: w.text }));
+    const secondWords = cue.words.slice(splitAt).map((w) => ({ text: w.text }));
+
+    setCues([
+      ...cues.slice(0, idx),
+      { start: cue.start, end: t, text: firstWords.map((w) => w.text).join(' '), words: firstWords },
+      { start: t, end: cue.end, text: secondWords.map((w) => w.text).join(' '), words: secondWords },
+      ...cues.slice(idx + 1),
+    ]);
+    persistCues();
+  }
+
   const audioEl = new Audio();
   if (usingAudio) {
     audioEl.preload = 'auto';
@@ -162,6 +188,9 @@ export default function Player(props) {
       } else if (e.code === 'Home') {
         e.preventDefault();
         seekTo(0);
+      } else if (e.code === 'KeyS') {
+        e.preventDefault();
+        sliceAtCursor();
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -208,6 +237,7 @@ export default function Player(props) {
           snapEnabled={snapEnabled}
           onToggleSnap={() => setSnapEnabled((v) => !v)}
           onEditText={setCueText}
+          onSlice={sliceAtCursor}
         />
       </div>
       <Show when={showSettings()}>
