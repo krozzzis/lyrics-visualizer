@@ -11,7 +11,7 @@ export default function Sidebar(props) {
   });
 
   return (
-    <aside id="sidebar">
+    <aside id="sidebar" style={{ width: `${props.width()}px` }}>
       <div id="sidebarHeader">Lines</div>
       <ul id="cueList">
         <For each={props.cues}>

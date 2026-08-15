@@ -60,7 +60,7 @@ export default function SettingsPanel(props) {
   }
 
   return (
-    <aside id="settingsPanel">
+    <aside id="settingsPanel" style={{ width: `${props.width()}px` }}>
       <div id="settingsHeader">
         <span>Settings</span>
         <button type="button" class="smallBtn" disabled={saving()} onClick={save}>

@@ -494,7 +494,7 @@ export default function Timeline(props) {
   }
 
   return (
-    <div id="timeline">
+    <div id="timeline" style={{ height: `${props.height()}px` }}>
       <div id="timelineHeader">
         <div class="headerLeft">
           <div class="bpmControl">

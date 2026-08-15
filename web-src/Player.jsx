@@ -8,6 +8,7 @@ import ControlsBar from './components/ControlsBar.jsx';
 import Timeline from './components/Timeline.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import { activeCueIndexAtTime } from './lib/cueIndex.js';
+import { createResizablePanel } from './lib/resizable.js';
 
 function isTextEntry(el) {
   if (!el) return false;
@@ -30,6 +31,16 @@ export default function Player(props) {
   const [showSettings, setShowSettings] = createSignal(false);
   const [volume, setVolume] = createSignal(1);
   const [muted, setMuted] = createSignal(false);
+
+  const sidebarPanel = createResizablePanel('sidebar', {
+    defaultSize: 300, min: 200, max: 520, axis: 'x',
+  });
+  const settingsPanel = createResizablePanel('settings', {
+    defaultSize: 320, min: 240, max: 560, axis: 'x', invert: true,
+  });
+  const timelinePanel = createResizablePanel('timeline', {
+    defaultSize: 220, min: 140, max: 480, axis: 'y', invert: true,
+  });
 
   const fallbackDuration = () => (
     config.output.duration
@@ -127,7 +138,8 @@ export default function Player(props) {
 
   return (
     <div id="app">
-      <Sidebar cues={cues} activeIndex={activeCueIndex} onSeek={seekTo} />
+      <Sidebar cues={cues} activeIndex={activeCueIndex} onSeek={seekTo} width={sidebarPanel.size} />
+      <div class="resizeHandleV" onPointerDown={sidebarPanel.onHandlePointerDown} />
       <div class="main">
         <ControlsBar
           config={config}
@@ -137,7 +149,9 @@ export default function Player(props) {
           onToggleSettings={() => setShowSettings((v) => !v)}
         />
         <Stage config={config} cues={cues} onReady={setSceneRef} />
+        <div class="resizeHandleH" onPointerDown={timelinePanel.onHandlePointerDown} />
         <Timeline
+          height={timelinePanel.size}
           config={config}
           cues={cues}
           duration={duration}
@@ -156,7 +170,8 @@ export default function Player(props) {
         />
       </div>
       <Show when={showSettings()}>
-        <SettingsPanel config={config} setConfig={setConfig} />
+        <div class="resizeHandleV" onPointerDown={settingsPanel.onHandlePointerDown} />
+        <SettingsPanel config={config} setConfig={setConfig} width={settingsPanel.size} />
       </Show>
     </div>
   );

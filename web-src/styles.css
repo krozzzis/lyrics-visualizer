@@ -73,6 +73,31 @@ button {
   height: 100%;
 }
 
+.resizeHandleV {
+  width: 5px;
+  flex-shrink: 0;
+  margin: 0 -2.5px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 1;
+}
+
+.resizeHandleH {
+  height: 5px;
+  flex-shrink: 0;
+  margin: -2.5px 0;
+  cursor: row-resize;
+  background: transparent;
+  z-index: 1;
+}
+
+.resizeHandleV:hover,
+.resizeHandleV:active,
+.resizeHandleH:hover,
+.resizeHandleH:active {
+  background: var(--accent-dim);
+}
+
 .loadingScreen {
   height: 100%;
   display: flex;
@@ -85,7 +110,6 @@ button {
 /* ---------- Sidebar ---------- */
 
 #sidebar {
-  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -319,7 +343,6 @@ button {
 /* ---------- Timeline (bottom bar) ---------- */
 
 #timeline {
-  height: 220px;
   flex-shrink: 0;
   background: var(--panel);
   border-top: 1px solid var(--border);
@@ -607,7 +630,6 @@ button {
 /* ---------- Settings panel ---------- */
 
 #settingsPanel {
-  width: 320px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
