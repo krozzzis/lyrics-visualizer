@@ -13,6 +13,8 @@ export default function RenderControls(props) {
   const [status, setStatus] = createSignal('idle'); // idle | running | done | error
   const [progress, setProgress] = createSignal({ frame: 0, frameCount: 0 });
   const [error, setError] = createSignal('');
+  const [outPath, setOutPath] = createSignal('');
+  const [url, setUrl] = createSignal('');
   let pollTimer;
 
   onCleanup(() => clearTimeout(pollTimer));
@@ -29,6 +31,8 @@ export default function RenderControls(props) {
       if (json.status === 'idle') return;
       setStatus(json.status);
       setProgress({ frame: json.frame, frameCount: json.frameCount });
+      setOutPath(json.outPath || '');
+      setUrl(json.url || '');
       if (json.status === 'error') {
         setError(json.error || 'Render failed');
         return;
@@ -76,7 +80,8 @@ export default function RenderControls(props) {
         {status() === 'running' ? `Rendering… ${pct()}%` : 'Render video'}
       </button>
       <Show when={status() === 'done'}>
-        <a class="smallBtn renderDownload" href="/api/render/download">Download</a>
+        <span class="renderSavedPath" title={outPath()}>Saved to {outPath()}</span>
+        <a class="smallBtn renderDownload" href={url()} download>Download</a>
       </Show>
       <Show when={status() === 'error'}>
         <span class="renderError" title={error()}>Render failed: {error()}</span>

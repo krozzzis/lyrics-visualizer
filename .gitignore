@@ -1,5 +1,6 @@
 node_modules/
 web/dist/
+renders/
 *.mp4
 *.mov
 *.webm

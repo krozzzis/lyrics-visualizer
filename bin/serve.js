@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 const path = require('path');
-const os = require('os');
 const crypto = require('crypto');
 const fs = require('fs');
 const express = require('express');
@@ -103,6 +102,12 @@ app.post('/api/config', (req, res) => {
 // toggled) that the user hasn't clicked "Save" for yet, and the video should
 // match what's on screen, not what's last on disk.
 let renderJob = null;
+const projectDir = path.dirname(path.resolve(opts.config));
+const rendersDir = path.join(projectDir, 'renders');
+// Accumulated render output lives in the project folder now, so it's just
+// static files — served under a stable per-file URL rather than routed
+// through a single mutable "whatever the last render was" endpoint.
+app.use('/renders', express.static(rendersDir));
 
 app.post('/api/render', (req, res) => {
   if (renderJob && renderJob.status === 'running') {
@@ -119,16 +124,17 @@ app.post('/api/render', (req, res) => {
     const renderCues = loadCues(renderConfig);
 
     const ext = alphaOf(renderConfig.colors.background) < 1 ? '.mov' : '.mp4';
-    const id = crypto.randomUUID();
-    const outPath = path.join(os.tmpdir(), `lyrics-visualizer-render-${id}${ext}`);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    fs.mkdirSync(rendersDir, { recursive: true });
+    const outPath = path.join(rendersDir, `lyrics-${stamp}${ext}`);
 
-    const previous = renderJob;
+    const id = crypto.randomUUID();
+    // Rendered files are user-visible output living in the project folder now
+    // (not scratch temp files), so — unlike the old os.tmpdir() path — a new
+    // render never deletes the previous one.
     renderJob = {
       id, status: 'running', frame: 0, frameCount: 0, t: 0, duration: 0, outPath, ext, error: null,
     };
-    if (previous && previous.outPath) {
-      fs.unlink(previous.outPath, () => {}); // best-effort; fine if it never finished
-    }
 
     renderVideo(renderConfig, renderCues, outPath, {
       onProgress: ({
@@ -158,19 +164,23 @@ app.post('/api/render', (req, res) => {
 app.get('/api/render/status', (req, res) => {
   if (!renderJob) return res.json({ status: 'idle' });
   const {
-    id, status, frame, frameCount, t, duration, error,
+    id, status, frame, frameCount, t, duration, error, outPath,
   } = renderJob;
   res.json({
-    id, status, frame, frameCount, t, duration, error,
+    id,
+    status,
+    frame,
+    frameCount,
+    t,
+    duration,
+    error,
+    // Relative to the project dir so the UI can show where the file landed
+    // without leaking the server's absolute filesystem layout.
+    outPath: outPath ? path.relative(projectDir, outPath) : null,
+    // A stable per-file URL (served statically from rendersDir) rather than
+    // a fixed endpoint whose backing file changes across renders.
+    url: outPath ? `/renders/${encodeURIComponent(path.basename(outPath))}` : null,
   });
-});
-
-app.get('/api/render/download', (req, res) => {
-  if (!renderJob || renderJob.status !== 'done') {
-    return res.status(409).json({ ok: false, error: 'No finished render available' });
-  }
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  res.download(renderJob.outPath, `lyrics-${stamp}${renderJob.ext}`);
 });
 
 app.get('/assets/font', (req, res) => res.sendFile(config.font.path));

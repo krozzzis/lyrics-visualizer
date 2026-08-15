@@ -313,6 +313,15 @@ button {
   white-space: nowrap;
 }
 
+.renderSavedPath {
+  color: #9297a3;
+  font-size: 12px;
+  max-width: 22em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---------- Stage ---------- */
 
 #stage {
