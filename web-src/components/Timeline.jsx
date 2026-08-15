@@ -1,5 +1,5 @@
 import {
-  createSignal, createEffect, onMount, onCleanup, Show,
+  createSignal, createMemo, createEffect, onMount, onCleanup, Show,
 } from 'solid-js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange } from '../lib/beatGrid.js';
@@ -31,6 +31,7 @@ const MAX_PX_PER_SECOND = 900;
 const DRAG_THRESHOLD = 4;
 const AUTO_FOLLOW_MARGIN = 0.15; // re-center once playhead leaves [margin, 1-margin] of width
 const AUTO_FOLLOW_TARGET = 0.3; // where the playhead lands after re-centering
+const MIN_THUMB_PX = 24;
 
 const TIME_STEPS = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800];
 const BAR_STEPS = [1, 2, 4, 8, 16, 32, 64, 128, 256];
@@ -45,6 +46,8 @@ function pickStep(candidates, valuePx, minPx) {
 export default function Timeline(props) {
   let viewportEl;
   let canvasEl;
+  let scrollbarTrackEl;
+  let scrollbarThumbEl;
 
   const [containerSize, setContainerSize] = createSignal({ width: 0, height: 0 });
   const [pxPerSecond, setPxPerSecond] = createSignal(50);
@@ -175,6 +178,80 @@ export default function Timeline(props) {
       viewportEl.removeEventListener('pointerup', onPointerUp);
       viewportEl.removeEventListener('wheel', onWheel);
     });
+  });
+
+  // --- horizontal scrollbar: thumb geometry + drag/track interaction ---
+  const thumbMetrics = createMemo(() => {
+    const width = containerSize().width;
+    const d = props.duration();
+    const px = pxPerSecond();
+    if (width <= 0 || d <= 0) return { thumbWidth: width, thumbLeft: 0, scrollable: false };
+    const visibleSeconds = width / px;
+    const maxOffset = Math.max(0, d - visibleSeconds);
+    if (maxOffset <= 0) return { thumbWidth: width, thumbLeft: 0, scrollable: false };
+    const thumbWidth = Math.min(width, Math.max(MIN_THUMB_PX, (visibleSeconds / d) * width));
+    const availableRange = width - thumbWidth;
+    const thumbLeft = (scrollOffset() / maxOffset) * availableRange;
+    return {
+      thumbWidth, thumbLeft, scrollable: true, maxOffset, availableRange,
+    };
+  });
+
+  // Dragging the thumb itself pans proportionally to how far the pointer moved.
+  onMount(() => {
+    let dragging = false;
+    let dragStartX = 0;
+    let dragStartOffset = 0;
+
+    function onPointerDown(e) {
+      const m = thumbMetrics();
+      if (!m.scrollable) return;
+      dragging = true;
+      dragStartX = e.clientX;
+      dragStartOffset = scrollOffset();
+      scrollbarThumbEl.setPointerCapture(e.pointerId);
+    }
+
+    function onPointerMove(e) {
+      if (!dragging) return;
+      const { maxOffset, availableRange } = thumbMetrics();
+      if (!availableRange) return;
+      const dx = e.clientX - dragStartX;
+      markInteracting();
+      setScrollOffset(clampScroll(dragStartOffset + (dx / availableRange) * maxOffset));
+    }
+
+    function onPointerUp() {
+      dragging = false;
+    }
+
+    scrollbarThumbEl.addEventListener('pointerdown', onPointerDown);
+    scrollbarThumbEl.addEventListener('pointermove', onPointerMove);
+    scrollbarThumbEl.addEventListener('pointerup', onPointerUp);
+    onCleanup(() => {
+      scrollbarThumbEl.removeEventListener('pointerdown', onPointerDown);
+      scrollbarThumbEl.removeEventListener('pointermove', onPointerMove);
+      scrollbarThumbEl.removeEventListener('pointerup', onPointerUp);
+    });
+  });
+
+  // Clicking the track itself (not the thumb) pages one screenful toward the click.
+  onMount(() => {
+    function onPointerDown(e) {
+      if (e.target !== scrollbarTrackEl) return;
+      const m = thumbMetrics();
+      if (!m.scrollable) return;
+      const width = containerSize().width;
+      const visibleSeconds = width / pxPerSecond();
+      const rect = scrollbarTrackEl.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      markInteracting();
+      const dir = clickX < m.thumbLeft ? -1 : 1;
+      setScrollOffset(clampScroll(scrollOffset() + dir * visibleSeconds * 0.9));
+    }
+
+    scrollbarTrackEl.addEventListener('pointerdown', onPointerDown);
+    onCleanup(() => scrollbarTrackEl.removeEventListener('pointerdown', onPointerDown));
   });
 
   // --- keep the playhead in view ---
@@ -471,8 +548,21 @@ export default function Timeline(props) {
             </button>
           </div>
         </Show>
-        <div id="timelineViewport" ref={viewportEl}>
-          <canvas id="timelineCanvas" ref={canvasEl} />
+        <div id="timelineMain">
+          <div id="timelineViewport" ref={viewportEl}>
+            <canvas id="timelineCanvas" ref={canvasEl} />
+          </div>
+          <div id="timelineScrollbar" ref={scrollbarTrackEl}>
+            <div
+              id="timelineScrollbarThumb"
+              ref={scrollbarThumbEl}
+              classList={{ disabled: !thumbMetrics().scrollable }}
+              style={{
+                width: `${thumbMetrics().thumbWidth}px`,
+                transform: `translateX(${thumbMetrics().thumbLeft}px)`,
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
