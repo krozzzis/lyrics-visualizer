@@ -527,16 +527,20 @@ export default function Timeline(props) {
       <div id="timelineBody">
         <Show when={props.usingAudio}>
           <div class="faderColumn">
-            <input
-              type="range"
-              class="verticalFader"
-              min="0"
-              max="1"
-              step="0.01"
-              value={props.volume()}
-              onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
-              title={`Volume ${Math.round(props.volume() * 100)}%`}
-            />
+            <div class="faderTrackWrap">
+              <div class="faderGroove" />
+              <div class="faderCap" style={{ top: `${(1 - props.volume()) * 100}%` }} />
+              <input
+                type="range"
+                class="verticalFader"
+                min="0"
+                max="1"
+                step="0.01"
+                value={props.volume()}
+                onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
+                title={`Volume ${Math.round(props.volume() * 100)}%`}
+              />
+            </div>
             <button
               type="button"
               class="muteBtn"

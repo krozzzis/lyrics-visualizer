@@ -454,85 +454,71 @@ button {
   background: var(--panel-alt);
 }
 
-.verticalFader {
+.faderTrackWrap {
+  position: relative;
   flex: 1;
   width: 36px;
   min-height: 0;
-  appearance: none;
-  writing-mode: vertical-lr;
-  direction: rtl;
+}
+
+/* the slot the cap rides in — a recessed groove down the middle */
+.faderGroove {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 8px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #050506, #24262f 45%, #050506);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #050506;
+  pointer-events: none;
+}
+
+/* the cap: a chunky physical-looking handle, wider than the slot. Its
+   position is driven directly by the volume value (see Timeline.jsx) rather
+   than by native range-thumb pseudo-elements, whose centering within a
+   writing-mode: vertical-lr track is inconsistent across browsers. */
+.faderCap {
+  position: absolute;
+  left: 50%;
+  width: 36px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 4px;
   background:
     repeating-linear-gradient(
       0deg,
-      var(--text-faint) 0,
-      var(--text-faint) 1px,
+      rgba(255, 255, 255, 0.14) 0,
+      rgba(255, 255, 255, 0.14) 1px,
       transparent 1px,
-      transparent 10px
-    );
-  background-size: 10px 100%;
-  background-position: center;
-  background-repeat: repeat-y;
+      transparent 4px
+    ),
+    linear-gradient(180deg, #6a6d7c 0%, #3a3c48 50%, #26272f 100%);
+  border: 1px solid #050506;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+/* the actual interactive control: full-height, fully transparent — only
+   used for hit-testing/dragging/keyboard input, all visuals above are
+   decorative and positioned from the volume value. */
+.verticalFader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  background: transparent;
+  opacity: 0;
   cursor: grab;
 }
 
 .verticalFader:active {
   cursor: grabbing;
-}
-
-/* the slot the cap rides in — a recessed groove down the middle */
-.verticalFader::-webkit-slider-runnable-track {
-  width: 8px;
-  background: linear-gradient(90deg, #050506, #24262f 45%, #050506);
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 1px #050506;
-}
-
-/* the cap: a chunky physical-looking handle, wider than the slot */
-.verticalFader::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 36px;
-  height: 20px;
-  border-radius: 4px;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.14) 0,
-      rgba(255, 255, 255, 0.14) 1px,
-      transparent 1px,
-      transparent 4px
-    ),
-    linear-gradient(180deg, #6a6d7c 0%, #3a3c48 50%, #26272f 100%);
-  border: 1px solid #050506;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  cursor: grab;
-}
-
-.verticalFader:active::-webkit-slider-thumb {
-  cursor: grabbing;
-}
-
-.verticalFader::-moz-range-track {
-  width: 8px;
-  background: linear-gradient(90deg, #050506, #24262f 45%, #050506);
-  border-radius: 3px;
-}
-
-.verticalFader::-moz-range-thumb {
-  width: 36px;
-  height: 20px;
-  border-radius: 4px;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.14) 0,
-      rgba(255, 255, 255, 0.14) 1px,
-      transparent 1px,
-      transparent 4px
-    ),
-    linear-gradient(180deg, #6a6d7c 0%, #3a3c48 50%, #26272f 100%);
-  border: 1px solid #050506;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  cursor: grab;
 }
 
 .muteBtn {
