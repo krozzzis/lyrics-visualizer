@@ -375,18 +375,6 @@ button {
   border-color: var(--accent);
 }
 
-.volumeControl {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-faint);
-}
-
-.volumeControl input[type="range"] {
-  width: 80px;
-  accent-color: var(--accent);
-}
-
 .zoomControls {
   display: flex;
   align-items: center;
@@ -412,8 +400,99 @@ button {
   color: var(--text);
 }
 
+#timelineBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.faderColumn {
+  width: 44px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 10px;
+  border-right: 1px solid var(--border);
+  background: var(--panel-alt);
+}
+
+.verticalFader {
+  flex: 1;
+  width: 6px;
+  min-height: 0;
+  appearance: none;
+  -webkit-appearance: slider-vertical;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.verticalFader::-webkit-slider-runnable-track {
+  width: 4px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.verticalFader::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent-strong);
+  border: 1px solid var(--panel);
+  margin-left: -9px;
+  cursor: pointer;
+}
+
+.verticalFader::-moz-range-track {
+  width: 4px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.verticalFader::-moz-range-thumb {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent-strong);
+  border: 1px solid var(--panel);
+  cursor: pointer;
+}
+
+.muteBtn {
+  width: 26px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.muteBtn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.muteBtn.active {
+  background: #ff8080;
+  border-color: #ff8080;
+  color: #2a0d0d;
+}
+
 #timelineViewport {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
   position: relative;
@@ -428,31 +507,6 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.timeReadout {
-  position: absolute;
-  top: 0;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 6px;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  color: var(--rulerText, var(--text-dim));
-  background: rgba(13, 14, 17, 0.72);
-  border-radius: var(--radius-sm);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.timeReadout .posBar {
-  color: #b9aeff;
-}
-
-.timeReadout .posSeconds {
-  color: #8b8fa0;
 }
 
 /* ---------- Settings panel ---------- */

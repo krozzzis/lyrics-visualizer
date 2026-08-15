@@ -29,6 +29,7 @@ export default function Player(props) {
   const [audioDuration, setAudioDuration] = createSignal(0);
   const [showSettings, setShowSettings] = createSignal(false);
   const [volume, setVolume] = createSignal(1);
+  const [muted, setMuted] = createSignal(false);
 
   const fallbackDuration = () => (
     config.output.duration
@@ -48,7 +49,7 @@ export default function Player(props) {
     audioEl.addEventListener('play', () => setPlaying(true));
     audioEl.addEventListener('pause', () => setPlaying(false));
     audioEl.addEventListener('ended', () => setPlaying(false));
-    createEffect(() => { audioEl.volume = volume(); });
+    createEffect(() => { audioEl.volume = muted() ? 0 : volume(); });
   }
 
   // Manual clock used only when there's no audio track to drive playback.
@@ -150,6 +151,8 @@ export default function Player(props) {
           usingAudio={usingAudio}
           volume={volume}
           onVolumeChange={setVolume}
+          muted={muted}
+          onToggleMute={() => setMuted((v) => !v)}
         />
       </div>
       <Show when={showSettings()}>

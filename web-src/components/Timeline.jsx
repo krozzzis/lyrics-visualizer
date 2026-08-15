@@ -1,5 +1,5 @@
 import {
-  createSignal, createMemo, createEffect, onMount, onCleanup, Show,
+  createSignal, createEffect, onMount, onCleanup, Show,
 } from 'solid-js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange } from '../lib/beatGrid.js';
@@ -24,7 +24,7 @@ const COLORS = {
   rulerBarText: '#b9aeff',
 };
 
-const RULER_H = 20;
+const RULER_H = 30;
 const WAVE_FRACTION = 0.58; // portion of the non-ruler height given to the waveform
 const MIN_PX_PER_SECOND = 4;
 const MAX_PX_PER_SECOND = 900;
@@ -310,7 +310,7 @@ export default function Timeline(props) {
 
     if (bpm > 0) {
       const barDuration = (60 / bpm) * beatsPerBar;
-      const barStride = pickStep(BAR_STEPS, barDuration * px, 40);
+      const barStride = pickStep(BAR_STEPS, barDuration * px, 50);
       ctx.textAlign = 'left';
       for (const beat of beats) {
         if (!beat.isBar) continue;
@@ -323,7 +323,9 @@ export default function Timeline(props) {
         ctx.lineTo(x + 0.5, RULER_H);
         ctx.stroke();
         ctx.fillStyle = COLORS.rulerBarText;
-        ctx.fillText(String(barIndex + 1), x + 3, 3);
+        ctx.fillText(String(barIndex + 1), x + 3, 2);
+        ctx.fillStyle = COLORS.rulerText;
+        ctx.fillText(formatClock(beat.time), x + 3, 13);
       }
     } else {
       const timeStep = pickStep(TIME_STEPS, px, 64);
@@ -337,7 +339,7 @@ export default function Timeline(props) {
         ctx.lineTo(x + 0.5, RULER_H);
         ctx.stroke();
         ctx.fillStyle = COLORS.rulerText;
-        ctx.fillText(formatClock(time), x + 3, 3);
+        ctx.fillText(formatClock(time), x + 3, 8);
       }
     }
 
@@ -414,36 +416,6 @@ export default function Timeline(props) {
     if (next) props.onSeek(next.start);
   }
 
-  // Reaper-style transport readout: current bar (only meaningful once a
-  // tempo grid exists) alongside the exact playhead position in seconds.
-  function currentBar(t) {
-    const bpm = props.bpm();
-    if (!bpm) return null;
-    const tl = props.config.timeline || {};
-    const beatsPerBar = tl.beatsPerBar || 4;
-    const gridOffset = tl.gridOffset || 0;
-    const barDuration = (60 / bpm) * beatsPerBar;
-    return Math.floor((t - gridOffset) / barDuration) + 1;
-  }
-
-  // Position readout: floats right at the playhead, in the ruler strip,
-  // DAW-style — flips to the left side once it'd run off the right edge.
-  const READOUT_FLIP_MARGIN = 150;
-  const playheadX = createMemo(() => (props.currentTime() - scrollOffset()) * pxPerSecond());
-  const readoutVisible = createMemo(() => {
-    const width = containerSize().width;
-    const x = playheadX();
-    return width > 0 && x >= -2 && x <= width + 2;
-  });
-  function readoutStyle() {
-    const x = playheadX();
-    const flip = x > containerSize().width - READOUT_FLIP_MARGIN;
-    return {
-      left: `${x}px`,
-      transform: flip ? 'translateX(calc(-100% - 6px))' : 'translateX(6px)',
-    };
-  }
-
   return (
     <div id="timeline">
       <div id="timelineHeader">
@@ -468,20 +440,6 @@ export default function Timeline(props) {
           <button type="button" class="transportBtn" onClick={seekNextCue} title="Next line">⏭</button>
         </div>
         <div class="headerRight">
-          <Show when={props.usingAudio}>
-            <div class="volumeControl">
-              <span>Vol</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={props.volume()}
-                onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
-                title={`Volume ${Math.round(props.volume() * 100)}%`}
-              />
-            </div>
-          </Show>
           <div class="zoomControls">
             <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
             <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>
@@ -489,16 +447,33 @@ export default function Timeline(props) {
           </div>
         </div>
       </div>
-      <div id="timelineViewport" ref={viewportEl}>
-        <canvas id="timelineCanvas" ref={canvasEl} />
-        <Show when={readoutVisible()}>
-          <div class="timeReadout" style={readoutStyle()}>
-            {currentBar(props.currentTime()) !== null && (
-              <span class="posBar">Bar {currentBar(props.currentTime())}</span>
-            )}
-            <span class="posSeconds">{props.currentTime().toFixed(3)}s</span>
+      <div id="timelineBody">
+        <Show when={props.usingAudio}>
+          <div class="faderColumn">
+            <input
+              type="range"
+              class="verticalFader"
+              min="0"
+              max="1"
+              step="0.01"
+              value={props.volume()}
+              onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
+              title={`Volume ${Math.round(props.volume() * 100)}%`}
+            />
+            <button
+              type="button"
+              class="muteBtn"
+              classList={{ active: props.muted() }}
+              onClick={props.onToggleMute}
+              title={props.muted() ? 'Unmute' : 'Mute'}
+            >
+              M
+            </button>
           </div>
         </Show>
+        <div id="timelineViewport" ref={viewportEl}>
+          <canvas id="timelineCanvas" ref={canvasEl} />
+        </div>
       </div>
     </div>
   );
