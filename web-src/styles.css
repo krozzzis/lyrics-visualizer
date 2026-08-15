@@ -297,7 +297,7 @@ button {
 }
 
 #timelineHeader {
-  height: 34px;
+  height: 48px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -306,6 +306,13 @@ button {
   border-bottom: 1px solid var(--border);
   color: var(--text-dim);
   font-size: 12px;
+}
+
+.transportControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .bpmControl {
@@ -335,7 +342,6 @@ button {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
 }
 
 .zoomControls button {

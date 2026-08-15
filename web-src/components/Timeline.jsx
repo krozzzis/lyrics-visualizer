@@ -4,6 +4,7 @@ import {
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange } from '../lib/beatGrid.js';
 import { formatClock } from '../lib/format.js';
+import PlayPauseButton from './PlayPauseButton.jsx';
 
 const COLORS = {
   waveformPlayed: '#9781ff',
@@ -380,6 +381,9 @@ export default function Timeline(props) {
   return (
     <div id="timeline">
       <div id="timelineHeader">
+        <div class="transportControls">
+          <PlayPauseButton playing={props.playing} onToggle={props.onToggle} />
+        </div>
         <div class="bpmControl">
           <span>BPM</span>
           <input
@@ -391,6 +395,7 @@ export default function Timeline(props) {
             onInput={onBpmInput}
           />
         </div>
+        <div class="spacer" />
         <div class="zoomControls">
           <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
           <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>

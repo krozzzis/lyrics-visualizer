@@ -1,5 +1,5 @@
 import {
-  createSignal, createMemo, onMount, onCleanup, Show,
+  createSignal, createEffect, createMemo, onMount, onCleanup, Show,
 } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import Sidebar from './components/Sidebar.jsx';
@@ -127,11 +127,8 @@ export default function Player(props) {
       <div class="main">
         <ControlsBar
           config={config}
-          playing={playing}
           currentTime={currentTime}
           duration={duration}
-          onToggle={() => (playing() ? pause() : play())}
-          onSeek={seekTo}
           showSettings={showSettings}
           onToggleSettings={() => setShowSettings((v) => !v)}
         />
@@ -143,6 +140,7 @@ export default function Player(props) {
           currentTime={currentTime}
           activeIndex={activeCueIndex}
           playing={playing}
+          onToggle={() => (playing() ? pause() : play())}
           bpm={() => config.timeline.bpm}
           onBpmChange={(v) => setConfig('timeline', 'bpm', v)}
           onSeek={seekTo}
