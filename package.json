@@ -1,0 +1,27 @@
+{
+  "name": "lyrics-visualizer",
+  "version": "0.1.0",
+  "description": "Lyric video visualizer: subtitles flow as one long line, camera jumps between words/lines on the beat. Renders live in the browser or offline via ffmpeg.",
+  "private": true,
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "lyrics-visualizer": "./bin/render.js"
+  },
+  "scripts": {
+    "render": "node bin/render.js",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.53",
+    "commander": "^12.1.0",
+    "express": "^4.21.1",
+    "js-yaml": "^4.1.0",
+    "solid-js": "^1.9.3"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11",
+    "vite-plugin-solid": "^2.11.0"
+  }
+}

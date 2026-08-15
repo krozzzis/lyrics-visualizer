@@ -1,0 +1,18 @@
+node_modules/
+web/dist/
+*.mp4
+*.mov
+*.webm
+*.png
+!example/**/*.png
+
+# Personal project data (your subtitles/audio) and your local config —
+# never published. Put your own files in data/ and point config.yaml at them.
+data/
+config.yaml
+config.local.yaml
+
+# Editor/OS/tooling cruft
+.DS_Store
+*.log
+.playwright-mcp/

@@ -1,0 +1,87 @@
+# Lyrics visualizer config. Copy this file to config.yaml (gitignored) and
+# point it at your own subtitle/audio/font — e.g. drop them in data/, which
+# is gitignored too, so your own project files never end up in git history.
+# Every path here is resolved relative to this file's own directory.
+#
+# This example points at the bundled demo subtitle so `npm run build && node
+# bin/serve.js -c config.example.yaml` works out of the box with no files of
+# your own.
+
+# Subtitle file: .ass (incl. \k karaoke tags), .srt or .vtt.
+subtitle: ./example/demo.ass
+
+# Optional: audio to play in the browser preview and mux into the rendered
+# video. Omitted here — point it at your own track, e.g. audio: ./data/song.mp3
+# audio: ./data/song.mp3
+
+font:
+  # Family name the font is registered under (Node) / declared as (browser).
+  # Doesn't need to match the font file's internal name.
+  family: LyricsFont
+  # .ttf/.otf file to bundle. Required — see README for why.
+  path: ./example/fonts/DejaVuSans.ttf
+  size: 72
+  weight: normal
+  style: normal
+
+colors:
+  text: "#000000"
+  # 6-digit hex, 8-digit hex (RRGGBBAA) for translucency, "transparent",
+  # or any CSS color (rgb()/rgba()/hsl()/named).
+  background: "#FFFFFF"
+
+output:
+  width: 1920
+  height: 1080
+  fps: 30
+  # Optional explicit total duration in seconds. If omitted: audio duration
+  # (when audio is set), else last cue's end time + 2s.
+  # duration: 210
+
+camera:
+  # Where a jump centers the active line: "center" of the whole line, or
+  # "start" of its first word.
+  anchor: center
+  # Seconds each jump animation takes.
+  jumpDuration: 0.22
+  # "easeOutBack" (snap + small overshoot bounce), "spring" (oscillating
+  # settle), or "linear".
+  easing: easeOutBack
+  # easeOutBack: overshoot strength (~1.7 default CSS easing constant).
+  # spring: oscillation count (~1.2 default).
+  overshoot: 1.7
+  zoom:
+    # Punch in/out on every jump, on the same eased timeline as the pan.
+    enabled: true
+    from: 0.92   # scale at the instant a jump lands: < 1 punches in, > 1 punches out
+    to: 1
+
+word:
+  # "line": jump once per subtitle cue, exactly on its start time (default,
+  #   always on-beat since it's real data from the file).
+  # "karaoke": jump per word using \k/\kf ASS timing tags when the cue has
+  #   them, falling back to line-level for cues that don't.
+  # "char-weighted": jump per word using synthesized timing (cue duration
+  #   split proportionally to word length). An approximation — can drift off
+  #   the beat — opt in only if you don't have real word-level timing.
+  splitMode: line
+
+layout:
+  # Horizontal gap in px between words, and extra gap between cues/lines.
+  wordGap: 40
+  cueGap: 140
+
+style:
+  # Opacity of the active vs. all other lines, for readability.
+  activeOpacity: 1
+  inactiveOpacity: 0.35
+
+timeline:
+  # Browser-preview-only: beat grid on the bottom timeline. Unset/null bpm
+  # hides the grid entirely (the waveform and cue-block track still show).
+  # bpm: 120
+  beatsPerBar: 4
+  # Time (seconds) of the first downbeat/bar line — not just any beat. Tune
+  # this against the waveform in the preview until the grid lines land on
+  # the kick/snare hits.
+  gridOffset: 0

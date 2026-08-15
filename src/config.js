@@ -1,0 +1,108 @@
+const fs = require('fs');
+const path = require('path');
+const yaml = require('js-yaml');
+
+const DEFAULTS = {
+  audio: null,
+  font: {
+    family: 'sans-serif',
+    path: null,
+    size: 64,
+    weight: 'normal',
+    style: 'normal',
+  },
+  colors: {
+    text: '#000000',
+    background: '#FFFFFF',
+  },
+  output: {
+    width: 1920,
+    height: 1080,
+    fps: 30,
+  },
+  camera: {
+    anchor: 'center', // 'center' | 'start'
+    jumpDuration: 0.22,
+    easing: 'easeOutBack', // 'easeOutBack' | 'spring' | 'linear'
+    overshoot: 1.7,
+    zoom: {
+      enabled: true,
+      from: 0.92, // scale at the instant a jump lands; < 1 punches in, > 1 punches out
+      to: 1,
+    },
+  },
+  word: {
+    splitMode: 'line', // 'line' | 'karaoke' | 'char-weighted'
+  },
+  layout: {
+    wordGap: 40,
+    cueGap: 120,
+  },
+  style: {
+    activeOpacity: 1,
+    inactiveOpacity: 0.35,
+  },
+  timeline: {
+    bpm: null, // null hides the beat grid in the browser preview
+    beatsPerBar: 4,
+    gridOffset: 0, // seconds — time of the first downbeat (bar line)
+  },
+};
+
+function deepMerge(base, override) {
+  if (override == null) return base;
+  const out = { ...base };
+  for (const key of Object.keys(override)) {
+    const bv = base ? base[key] : undefined;
+    const ov = override[key];
+    out[key] = (bv && typeof bv === 'object' && !Array.isArray(bv)
+      && ov && typeof ov === 'object' && !Array.isArray(ov))
+      ? deepMerge(bv, ov)
+      : ov;
+  }
+  return out;
+}
+
+function resolvePath(basedir, p) {
+  if (!p) return p;
+  return path.isAbsolute(p) ? p : path.resolve(basedir, p);
+}
+
+function loadConfig(configPath) {
+  const absConfigPath = path.resolve(configPath);
+  const basedir = path.dirname(absConfigPath);
+  const raw = fs.readFileSync(absConfigPath, 'utf8');
+  const parsed = yaml.load(raw) || {};
+
+  if (!parsed.subtitle) {
+    throw new Error(`Config ${absConfigPath} is missing required field: subtitle`);
+  }
+
+  const merged = deepMerge(DEFAULTS, parsed);
+
+  merged.subtitle = resolvePath(basedir, parsed.subtitle);
+  merged.audio = parsed.audio ? resolvePath(basedir, parsed.audio) : null;
+  merged.font.path = parsed.font && parsed.font.path ? resolvePath(basedir, parsed.font.path) : null;
+
+  if (!fs.existsSync(merged.subtitle)) {
+    throw new Error(`Subtitle file not found: ${merged.subtitle}`);
+  }
+  if (merged.audio && !fs.existsSync(merged.audio)) {
+    throw new Error(`Audio file not found: ${merged.audio}`);
+  }
+  if (!merged.font.path) {
+    // A bundled font file is required (not just a family name): a headless
+    // Node render has no system font store to fall back to, and relying on
+    // whatever fonts happen to be installed would make the browser preview
+    // and the ffmpeg render measure text differently. See font.path in the
+    // config schema.
+    throw new Error('Config field font.path is required: point it at a .ttf/.otf file to bundle.');
+  }
+  if (!fs.existsSync(merged.font.path)) {
+    throw new Error(`Font file not found: ${merged.font.path}`);
+  }
+
+  return merged;
+}
+
+module.exports = { loadConfig, DEFAULTS, deepMerge };

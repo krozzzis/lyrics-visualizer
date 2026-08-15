@@ -1,0 +1,405 @@
+import {
+  createSignal, createEffect, onMount, onCleanup,
+} from 'solid-js';
+import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
+import { beatsInRange } from '../lib/beatGrid.js';
+import { formatClock } from '../lib/format.js';
+
+const COLORS = {
+  waveformPlayed: '#9781ff',
+  waveformUnplayed: '#454857',
+  barLine: 'rgba(255,255,255,0.24)',
+  beatLine: 'rgba(255,255,255,0.09)',
+  blockFill: '#23252e',
+  blockBorder: '#33353f',
+  blockFillActive: '#7c5cff',
+  blockText: '#9297a3',
+  blockTextActive: '#ffffff',
+  playhead: '#ffffff',
+  playheadHandle: '#7c5cff',
+  rulerBg: 'rgba(255,255,255,0.03)',
+  rulerTick: 'rgba(255,255,255,0.28)',
+  rulerText: '#8b8fa0',
+  rulerBarText: '#b9aeff',
+};
+
+const RULER_H = 20;
+const WAVE_FRACTION = 0.58; // portion of the non-ruler height given to the waveform
+const MIN_PX_PER_SECOND = 4;
+const MAX_PX_PER_SECOND = 900;
+const DRAG_THRESHOLD = 4;
+const AUTO_FOLLOW_MARGIN = 0.15; // re-center once playhead leaves [margin, 1-margin] of width
+const AUTO_FOLLOW_TARGET = 0.3; // where the playhead lands after re-centering
+
+const TIME_STEPS = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800];
+const BAR_STEPS = [1, 2, 4, 8, 16, 32, 64, 128, 256];
+
+function pickStep(candidates, valuePx, minPx) {
+  for (const c of candidates) {
+    if (c * valuePx >= minPx) return c;
+  }
+  return candidates[candidates.length - 1];
+}
+
+export default function Timeline(props) {
+  let viewportEl;
+  let canvasEl;
+
+  const [containerSize, setContainerSize] = createSignal({ width: 0, height: 0 });
+  const [pxPerSecond, setPxPerSecond] = createSignal(50);
+  const [scrollOffset, setScrollOffset] = createSignal(0);
+  const [peakData, setPeakData] = createSignal(null);
+  const [userInteracting, setUserInteracting] = createSignal(false);
+  const [fitted, setFitted] = createSignal(false);
+
+  let interactingTimer;
+  function markInteracting() {
+    setUserInteracting(true);
+    clearTimeout(interactingTimer);
+    interactingTimer = setTimeout(() => setUserInteracting(false), 1500);
+  }
+
+  function clampScroll(offset, px = pxPerSecond(), width = containerSize().width) {
+    const maxOffset = Math.max(0, props.duration() - width / px);
+    return Math.min(Math.max(0, offset), maxOffset);
+  }
+
+  function fitToWidth() {
+    const width = containerSize().width;
+    const d = props.duration();
+    if (width <= 0 || d <= 0) return;
+    setPxPerSecond(Math.max(MIN_PX_PER_SECOND, width / d));
+    setScrollOffset(0);
+  }
+
+  function zoomBy(factor) {
+    const width = containerSize().width;
+    const centerTime = scrollOffset() + (width / 2) / pxPerSecond();
+    const next = Math.min(MAX_PX_PER_SECOND, Math.max(MIN_PX_PER_SECOND, pxPerSecond() * factor));
+    setPxPerSecond(next);
+    setScrollOffset(clampScroll(centerTime - (width / 2) / next, next, width));
+  }
+
+  // --- size tracking ---
+  onMount(() => {
+    const ro = new ResizeObserver((entries) => {
+      const box = entries[0].contentRect;
+      setContainerSize({ width: box.width, height: box.height });
+    });
+    ro.observe(viewportEl);
+    onCleanup(() => ro.disconnect());
+  });
+
+  // Fit the whole song on first real measurement / once duration is known.
+  createEffect(() => {
+    const { width } = containerSize();
+    const d = props.duration();
+    if (!fitted() && width > 0 && d > 0) {
+      fitToWidth();
+      setFitted(true);
+    }
+  });
+
+  // --- waveform peaks ---
+  onMount(async () => {
+    if (!props.config.audio) return;
+    try {
+      const buffer = await decodeAudio(props.config.audio);
+      setPeakData(computePeaks(buffer));
+    } catch (err) {
+      // Non-fatal: timeline still shows grid + cue blocks without a waveform.
+      // eslint-disable-next-line no-console
+      console.warn('waveform decode failed:', err);
+    }
+  });
+
+  // --- pointer interaction: click to seek, drag to pan ---
+  onMount(() => {
+    let dragging = false;
+    let dragged = false;
+    let startX = 0;
+    let startOffset = 0;
+
+    function onPointerDown(e) {
+      dragging = true;
+      dragged = false;
+      startX = e.clientX;
+      startOffset = scrollOffset();
+      viewportEl.setPointerCapture(e.pointerId);
+      viewportEl.classList.add('dragging');
+    }
+
+    function onPointerMove(e) {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > DRAG_THRESHOLD) dragged = true;
+      if (dragged) {
+        markInteracting();
+        setScrollOffset(clampScroll(startOffset - dx / pxPerSecond()));
+      }
+    }
+
+    function onPointerUp(e) {
+      if (!dragging) return;
+      dragging = false;
+      viewportEl.classList.remove('dragging');
+      if (!dragged) {
+        const rect = viewportEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        props.onSeek(scrollOffset() + x / pxPerSecond());
+      } else {
+        markInteracting();
+      }
+    }
+
+    function onWheel(e) {
+      if (!e.ctrlKey && !e.metaKey) {
+        // Plain wheel/trackpad: pan horizontally.
+        markInteracting();
+        setScrollOffset(clampScroll(scrollOffset() + e.deltaX / pxPerSecond() + e.deltaY / pxPerSecond()));
+        e.preventDefault();
+        return;
+      }
+      e.preventDefault();
+      zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15);
+    }
+
+    viewportEl.addEventListener('pointerdown', onPointerDown);
+    viewportEl.addEventListener('pointermove', onPointerMove);
+    viewportEl.addEventListener('pointerup', onPointerUp);
+    viewportEl.addEventListener('wheel', onWheel, { passive: false });
+    onCleanup(() => {
+      viewportEl.removeEventListener('pointerdown', onPointerDown);
+      viewportEl.removeEventListener('pointermove', onPointerMove);
+      viewportEl.removeEventListener('pointerup', onPointerUp);
+      viewportEl.removeEventListener('wheel', onWheel);
+    });
+  });
+
+  // --- keep the playhead in view ---
+  // While playing: DAW-style scroll-follow, re-centering once the playhead
+  // nears the edge. While paused: don't fight a manual pan/click, but if an
+  // external seek (sidebar, controls bar) lands outside the visible window
+  // entirely, snap it into view rather than leaving the timeline pointed
+  // somewhere stale.
+  createEffect(() => {
+    const t = props.currentTime();
+    if (userInteracting()) return;
+    const width = containerSize().width;
+    if (width <= 0) return;
+    const x = (t - scrollOffset()) * pxPerSecond();
+
+    if (props.playing()) {
+      if (x < width * AUTO_FOLLOW_MARGIN || x > width * (1 - AUTO_FOLLOW_MARGIN)) {
+        setScrollOffset(clampScroll(t - (width * AUTO_FOLLOW_TARGET) / pxPerSecond()));
+      }
+    } else if (x < 0 || x > width) {
+      setScrollOffset(clampScroll(t - (width * AUTO_FOLLOW_TARGET) / pxPerSecond()));
+    }
+  });
+
+  // --- drawing ---
+  function roundRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function draw() {
+    if (!canvasEl) return;
+    const { width, height } = containerSize();
+    if (width <= 0 || height <= 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    if (canvasEl.width !== Math.round(width * dpr) || canvasEl.height !== Math.round(height * dpr)) {
+      canvasEl.width = Math.round(width * dpr);
+      canvasEl.height = Math.round(height * dpr);
+    }
+    const ctx = canvasEl.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const px = pxPerSecond();
+    const start = scrollOffset();
+    const end = start + width / px;
+    const t = props.currentTime();
+    const bpm = props.bpm();
+    const tl = props.config.timeline || {};
+    const beatsPerBar = tl.beatsPerBar || 4;
+    const gridOffset = tl.gridOffset || 0;
+
+    const contentH = height - RULER_H;
+    const waveH = contentH * WAVE_FRACTION;
+    const blockY = RULER_H + waveH + 6;
+    const blockH = height - blockY - 6;
+
+    // Beat grid (drawn first, under everything else in the content area)
+    const beats = beatsInRange(bpm, beatsPerBar, gridOffset, start, end);
+    for (const beat of beats) {
+      const x = (beat.time - start) * px;
+      ctx.strokeStyle = beat.isBar ? COLORS.barLine : COLORS.beatLine;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, RULER_H + (beat.isBar ? 0 : waveH * 0.15));
+      ctx.lineTo(x + 0.5, RULER_H + waveH);
+      ctx.stroke();
+    }
+
+    // Waveform
+    const peaks = peakData();
+    const waveCenterY = RULER_H + waveH / 2;
+    if (peaks) {
+      for (let x = 0; x < width; x += 1) {
+        const time = start + x / px;
+        const amp = peakAt(peaks, time);
+        const barH = Math.max(1, amp * (waveH / 2 - 4));
+        ctx.fillStyle = time <= t ? COLORS.waveformPlayed : COLORS.waveformUnplayed;
+        ctx.fillRect(x, waveCenterY - barH, 1, barH * 2);
+      }
+    } else {
+      ctx.strokeStyle = COLORS.waveformUnplayed;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, waveCenterY);
+      ctx.lineTo(width, waveCenterY);
+      ctx.stroke();
+    }
+
+    // Cue blocks
+    const activeIdx = props.activeIndex();
+    props.cues.forEach((cue, i) => {
+      if (cue.end < start || cue.start > end) return;
+      const x1 = (cue.start - start) * px;
+      const x2 = (cue.end - start) * px;
+      const w = Math.max(2, x2 - x1);
+      const active = i === activeIdx;
+      ctx.fillStyle = active ? COLORS.blockFillActive : COLORS.blockFill;
+      roundRect(ctx, x1, blockY, w, blockH, 5);
+      ctx.fill();
+      if (!active) {
+        ctx.strokeStyle = COLORS.blockBorder;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      if (w > 14) {
+        ctx.save();
+        roundRect(ctx, x1, blockY, w, blockH, 5);
+        ctx.clip();
+        ctx.fillStyle = active ? COLORS.blockTextActive : COLORS.blockText;
+        ctx.font = '11px -apple-system, "Segoe UI", Roboto, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'left';
+        ctx.fillText(cue.text, x1 + 6, blockY + blockH / 2 + 1);
+        ctx.restore();
+      }
+    });
+
+    // Ruler: bar numbers when BPM is set (DAW convention — the grid is the
+    // primary reference once there's tempo info), otherwise plain timecodes.
+    ctx.fillStyle = COLORS.rulerBg;
+    ctx.fillRect(0, 0, width, RULER_H);
+    ctx.font = '10px -apple-system, "Segoe UI", Roboto, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.lineWidth = 1;
+
+    if (bpm > 0) {
+      const barDuration = (60 / bpm) * beatsPerBar;
+      const barStride = pickStep(BAR_STEPS, barDuration * px, 40);
+      ctx.textAlign = 'left';
+      for (const beat of beats) {
+        if (!beat.isBar) continue;
+        const barIndex = Math.round((beat.time - gridOffset) / barDuration);
+        if (((barIndex % barStride) + barStride) % barStride !== 0) continue;
+        const x = (beat.time - start) * px;
+        ctx.strokeStyle = COLORS.rulerTick;
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, RULER_H - 6);
+        ctx.lineTo(x + 0.5, RULER_H);
+        ctx.stroke();
+        ctx.fillStyle = COLORS.rulerBarText;
+        ctx.fillText(String(barIndex + 1), x + 3, 3);
+      }
+    } else {
+      const timeStep = pickStep(TIME_STEPS, px, 64);
+      const firstTick = Math.ceil(start / timeStep) * timeStep;
+      ctx.textAlign = 'left';
+      for (let time = firstTick; time <= end; time += timeStep) {
+        const x = (time - start) * px;
+        ctx.strokeStyle = COLORS.rulerTick;
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, RULER_H - 6);
+        ctx.lineTo(x + 0.5, RULER_H);
+        ctx.stroke();
+        ctx.fillStyle = COLORS.rulerText;
+        ctx.fillText(formatClock(time), x + 3, 3);
+      }
+    }
+
+    // Playhead
+    const playheadX = (t - start) * px;
+    if (playheadX >= -2 && playheadX <= width + 2) {
+      ctx.strokeStyle = COLORS.playhead;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(playheadX, 0);
+      ctx.lineTo(playheadX, height);
+      ctx.stroke();
+
+      ctx.fillStyle = COLORS.playheadHandle;
+      ctx.beginPath();
+      ctx.moveTo(playheadX - 5, 0);
+      ctx.lineTo(playheadX + 5, 0);
+      ctx.lineTo(playheadX, 7);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  createEffect(() => {
+    // Re-run on every input that changes what's drawn.
+    props.currentTime();
+    props.activeIndex();
+    props.bpm();
+    containerSize();
+    pxPerSecond();
+    scrollOffset();
+    peakData();
+    draw();
+  });
+
+  function onBpmInput(e) {
+    const v = parseFloat(e.currentTarget.value);
+    props.onBpmChange(Number.isFinite(v) && v > 0 ? v : null);
+  }
+
+  return (
+    <div id="timeline">
+      <div id="timelineHeader">
+        <div class="bpmControl">
+          <span>BPM</span>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            placeholder="—"
+            value={props.bpm() ?? ''}
+            onInput={onBpmInput}
+          />
+        </div>
+        <div class="zoomControls">
+          <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
+          <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>
+          <button type="button" onClick={() => zoomBy(1.4)} title="Zoom in">+</button>
+        </div>
+      </div>
+      <div id="timelineViewport" ref={viewportEl}>
+        <canvas id="timelineCanvas" ref={canvasEl} />
+      </div>
+    </div>
+  );
+}

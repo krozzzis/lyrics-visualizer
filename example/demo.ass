@@ -1,0 +1,21 @@
+[Script Info]
+Title: Lyrics Visualizer Demo
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.50,Default,,0,0,0,,Words flow in a single long line
+Dialogue: 0,0:00:03.50,0:00:06.00,Default,,0,0,0,,and the camera jumps to meet them
+Dialogue: 0,0:00:06.00,0:00:08.50,Default,,0,0,0,,right on the beat of every cue
+Dialogue: 0,0:00:09.00,0:00:11.50,Default,,0,0,0,,{\k40}This {\k35}line {\k45}has {\k50}karaoke {\k60}timing
+Dialogue: 0,0:00:12.00,0:00:14.50,Default,,0,0,0,,so words can jump one at a time
+Dialogue: 0,0:00:15.00,0:00:17.50,Default,,0,0,0,,drop in your own subtitles and audio
+Dialogue: 0,0:00:18.00,0:00:20.50,Default,,0,0,0,,tune the font colors and camera feel
+Dialogue: 0,0:00:21.00,0:00:24.00,Default,,0,0,0,,and render it straight to video
