@@ -1,5 +1,5 @@
 import {
-  createSignal, createEffect, onMount, onCleanup, Show,
+  createSignal, createMemo, createEffect, onMount, onCleanup, Show,
 } from 'solid-js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange } from '../lib/beatGrid.js';
@@ -426,9 +426,40 @@ export default function Timeline(props) {
     return Math.floor((t - gridOffset) / barDuration) + 1;
   }
 
+  // Position readout: floats right at the playhead, in the ruler strip,
+  // DAW-style — flips to the left side once it'd run off the right edge.
+  const READOUT_FLIP_MARGIN = 150;
+  const playheadX = createMemo(() => (props.currentTime() - scrollOffset()) * pxPerSecond());
+  const readoutVisible = createMemo(() => {
+    const width = containerSize().width;
+    const x = playheadX();
+    return width > 0 && x >= -2 && x <= width + 2;
+  });
+  function readoutStyle() {
+    const x = playheadX();
+    const flip = x > containerSize().width - READOUT_FLIP_MARGIN;
+    return {
+      left: `${x}px`,
+      transform: flip ? 'translateX(calc(-100% - 6px))' : 'translateX(6px)',
+    };
+  }
+
   return (
     <div id="timeline">
       <div id="timelineHeader">
+        <div class="headerLeft">
+          <div class="bpmControl">
+            <span>BPM</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="—"
+              value={props.bpm() ?? ''}
+              onInput={onBpmInput}
+            />
+          </div>
+        </div>
         <div class="transportControls">
           <button type="button" class="transportBtn" onClick={seekPrevCue} title="Previous line">⏮</button>
           <button type="button" class="transportBtn" onClick={() => skipBy(-skipStep())} title="Skip back">◀◀</button>
@@ -436,46 +467,38 @@ export default function Timeline(props) {
           <button type="button" class="transportBtn" onClick={() => skipBy(skipStep())} title="Skip forward">▶▶</button>
           <button type="button" class="transportBtn" onClick={seekNextCue} title="Next line">⏭</button>
         </div>
-        <div class="bpmControl">
-          <span>BPM</span>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            placeholder="—"
-            value={props.bpm() ?? ''}
-            onInput={onBpmInput}
-          />
-        </div>
-        <div class="positionDisplay">
-          {currentBar(props.currentTime()) !== null && (
-            <span class="posBar">Bar {currentBar(props.currentTime())}</span>
-          )}
-          <span class="posSeconds">{props.currentTime().toFixed(3)}s</span>
-        </div>
-        <div class="spacer" />
-        <Show when={props.usingAudio}>
-          <div class="volumeControl">
-            <span>Vol</span>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={props.volume()}
-              onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
-              title={`Volume ${Math.round(props.volume() * 100)}%`}
-            />
+        <div class="headerRight">
+          <Show when={props.usingAudio}>
+            <div class="volumeControl">
+              <span>Vol</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={props.volume()}
+                onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
+                title={`Volume ${Math.round(props.volume() * 100)}%`}
+              />
+            </div>
+          </Show>
+          <div class="zoomControls">
+            <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
+            <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>
+            <button type="button" onClick={() => zoomBy(1.4)} title="Zoom in">+</button>
           </div>
-        </Show>
-        <div class="zoomControls">
-          <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
-          <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>
-          <button type="button" onClick={() => zoomBy(1.4)} title="Zoom in">+</button>
         </div>
       </div>
       <div id="timelineViewport" ref={viewportEl}>
         <canvas id="timelineCanvas" ref={canvasEl} />
+        <Show when={readoutVisible()}>
+          <div class="timeReadout" style={readoutStyle()}>
+            {currentBar(props.currentTime()) !== null && (
+              <span class="posBar">Bar {currentBar(props.currentTime())}</span>
+            )}
+            <span class="posSeconds">{props.currentTime().toFixed(3)}s</span>
+          </div>
+        </Show>
       </div>
     </div>
   );
