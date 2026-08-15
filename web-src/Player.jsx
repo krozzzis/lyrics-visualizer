@@ -15,12 +15,13 @@ function isTextEntry(el) {
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable;
 }
 
-// cues are loaded once by App before this component is created, so they're
-// a plain (non-signal) prop — genuinely static for this component's whole
-// lifetime. config becomes a reactive store here: the settings panel edits
-// it live, and Stage/Timeline re-render off the same store.
+// cues and config both become reactive Solid stores here: cues are edited
+// from the timeline/sidebar (resize, text edit, slice) and config from the
+// settings panel, and Stage/Timeline re-render off the same stores — Stage's
+// prepareScene() effect (Stage.jsx) already re-runs on any store field it
+// actually reads, the same mechanism that already drives it for config.
 export default function Player(props) {
-  const { cues } = props;
+  const [cues, setCues] = createStore(props.cues);
   const [config, setConfig] = createStore(props.config);
   const usingAudio = Boolean(props.config.audio);
 

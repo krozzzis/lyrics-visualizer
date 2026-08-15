@@ -444,7 +444,10 @@ export default function Timeline(props) {
   }
 
   createEffect(() => {
-    // Re-run on every input that changes what's drawn.
+    // Re-run on every input that changes what's drawn. cues is a reactive
+    // store now (editable via resize/text-edit/slice) — draw() reads it
+    // imperatively inside a plain function, not JSX, so each cue's tracked
+    // fields must be read here explicitly or an edit wouldn't repaint.
     props.currentTime();
     props.activeIndex();
     props.bpm();
@@ -452,6 +455,7 @@ export default function Timeline(props) {
     pxPerSecond();
     scrollOffset();
     peakData();
+    props.cues.forEach((cue) => { void cue.start; void cue.end; void cue.text; });
     draw();
   });
 
