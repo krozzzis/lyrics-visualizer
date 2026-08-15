@@ -10,6 +10,9 @@ const { loadConfig, deepMerge } = require('../src/config');
 const { loadCues } = require('../src/cues');
 const { renderVideo } = require('../src/render');
 const { alphaOf } = require('../src/color');
+const { ensureNativeSubtitle } = require('../src/convertSubtitle');
+const { wordsFromText } = require('../src/subtitles');
+const { serializeNative } = require('../src/subtitles/native');
 
 const program = new Command();
 program
@@ -18,6 +21,7 @@ program
   .parse(process.argv);
 
 const opts = program.opts();
+ensureNativeSubtitle(opts.config);
 let config = loadConfig(opts.config);
 let cues = loadCues(config);
 
@@ -87,6 +91,40 @@ app.post('/api/config', (req, res) => {
     // like they never applied or never persisted.
     config = loadConfig(opts.config);
     cues = loadCues(config);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Persists cue edits (text/timestamps from the timeline or sidebar) to the
+// native JSON subtitle file. Every cue is replaced wholesale — the client is
+// authoritative on start/end/text — and words[] is always re-derived from
+// text here rather than trusted from the client, since editing a cue's text
+// invalidates whatever word split (and any karaoke word timing) it had.
+app.post('/api/cues', (req, res) => {
+  try {
+    const incoming = (req.body || {}).cues;
+    if (!Array.isArray(incoming)) {
+      return res.status(400).json({ ok: false, error: 'Expected { cues: [...] }' });
+    }
+    if (path.extname(config.subtitle).toLowerCase() !== '.json') {
+      // Should be unreachable: ensureNativeSubtitle() runs at startup. Guards
+      // against ever silently overwriting a non-native source file.
+      return res.status(409).json({ ok: false, error: 'subtitle is not in native format' });
+    }
+
+    const newCues = incoming.map((c) => {
+      if (typeof c.start !== 'number' || typeof c.end !== 'number' || typeof c.text !== 'string') {
+        throw new Error('Each cue needs numeric start/end and string text');
+      }
+      return {
+        start: c.start, end: c.end, text: c.text, words: wordsFromText(c.text),
+      };
+    }).sort((a, b) => a.start - b.start);
+
+    fs.writeFileSync(config.subtitle, serializeNative(newCues), 'utf8');
+    cues = newCues;
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });

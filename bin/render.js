@@ -9,6 +9,7 @@ const { loadCues } = require('../src/cues');
 const { prepareScene, drawFrame } = require('../src/scene');
 const { registerConfigFont } = require('../src/node-font');
 const { renderVideo } = require('../src/render');
+const { ensureNativeSubtitle } = require('../src/convertSubtitle');
 
 function buildScene(config) {
   registerConfigFont(config);
@@ -21,12 +22,14 @@ function buildScene(config) {
 }
 
 async function cmdDump(opts) {
+  ensureNativeSubtitle(opts.config);
   const config = loadConfig(opts.config);
   const cues = loadSubtitles(config.subtitle);
   console.log(JSON.stringify(cues, null, 2));
 }
 
 async function cmdFrame(opts) {
+  ensureNativeSubtitle(opts.config);
   const config = loadConfig(opts.config);
   const { canvas, ctx, scene } = buildScene(config);
   drawFrame(ctx, config.output, config, scene, parseFloat(opts.time));
@@ -35,6 +38,7 @@ async function cmdFrame(opts) {
 }
 
 async function cmdVideo(opts) {
+  ensureNativeSubtitle(opts.config);
   const config = loadConfig(opts.config);
   const cues = loadCues(config);
   const start = parseFloat(opts.start);

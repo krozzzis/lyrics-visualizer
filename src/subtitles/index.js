@@ -3,6 +3,7 @@ const path = require('path');
 const { parseAss } = require('./ass');
 const { parseSrt } = require('./srt');
 const { parseVtt } = require('./vtt');
+const { parseNative } = require('./native');
 
 // Loads a subtitle file and returns a normalized, time-sorted list of cues:
 //   { start, end, text, words: [{ text, start?, end? }] }
@@ -19,12 +20,22 @@ function loadSubtitles(filePath) {
     cues = parseSrt(content);
   } else if (ext === '.vtt') {
     cues = parseVtt(content);
+  } else if (ext === '.json') {
+    cues = parseNative(content);
   } else {
-    throw new Error(`Unsupported subtitle format: ${ext} (expected .ass, .ssa, .srt or .vtt)`);
+    throw new Error(`Unsupported subtitle format: ${ext} (expected .ass, .ssa, .srt, .vtt or .json)`);
   }
 
   cues.sort((a, b) => a.start - b.start);
   return cues;
 }
 
-module.exports = { loadSubtitles };
+// Every editable field a cue carries (its full shape) — text is re-split
+// into plain words the same way srt.js/vtt.js/ass.js do for lines without
+// karaoke tags, since an edited cue's word boundaries can't be assumed to
+// match whatever word-level timing (if any) the source format supplied.
+function wordsFromText(text) {
+  return text.split(/\s+/).filter(Boolean).map((w) => ({ text: w }));
+}
+
+module.exports = { loadSubtitles, wordsFromText };
