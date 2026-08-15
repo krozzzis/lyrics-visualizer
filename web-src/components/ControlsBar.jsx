@@ -1,5 +1,6 @@
 import { createSignal } from 'solid-js';
 import PlayPauseButton from './PlayPauseButton.jsx';
+import RenderControls from './RenderControls.jsx';
 import { formatClock } from '../lib/format.js';
 
 export default function ControlsBar(props) {
@@ -29,6 +30,7 @@ export default function ControlsBar(props) {
         />
         <button type="submit" class="smallBtn">Go</button>
       </form>
+      <RenderControls config={props.config} />
       <button
         type="button"
         class="smallBtn"

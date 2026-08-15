@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js';
+import { buildEditablePayload } from '../lib/editableConfig.js';
 
 function toNumber(raw, fallback = 0) {
   const v = parseFloat(raw);
@@ -38,35 +39,7 @@ export default function SettingsPanel(props) {
   async function save() {
     setSaving(true);
     setSaveState(null);
-    const body = {
-      output: {
-        width: config.output.width,
-        height: config.output.height,
-        fps: config.output.fps,
-        duration: config.output.duration,
-      },
-      colors: { text: config.colors.text, background: config.colors.background },
-      font: { size: config.font.size, weight: config.font.weight, style: config.font.style },
-      camera: {
-        anchor: config.camera.anchor,
-        jumpDuration: config.camera.jumpDuration,
-        easing: config.camera.easing,
-        overshoot: config.camera.overshoot,
-        zoom: {
-          enabled: config.camera.zoom.enabled,
-          amount: config.camera.zoom.amount,
-          outFraction: config.camera.zoom.outFraction,
-        },
-      },
-      word: { splitMode: config.word.splitMode },
-      layout: { wordGap: config.layout.wordGap, cueGap: config.layout.cueGap },
-      style: { activeOpacity: config.style.activeOpacity, inactiveOpacity: config.style.inactiveOpacity },
-      timeline: {
-        bpm: config.timeline.bpm,
-        beatsPerBar: config.timeline.beatsPerBar,
-        gridOffset: config.timeline.gridOffset,
-      },
-    };
+    const body = buildEditablePayload(config);
     try {
       const res = await fetch('/api/config', {
         method: 'POST',

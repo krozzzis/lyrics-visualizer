@@ -126,6 +126,7 @@ export default function Player(props) {
       <Sidebar cues={cues} activeIndex={activeCueIndex} onSeek={seekTo} />
       <div class="main">
         <ControlsBar
+          config={config}
           playing={playing}
           currentTime={currentTime}
           duration={duration}
