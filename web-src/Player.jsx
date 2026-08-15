@@ -28,6 +28,7 @@ export default function Player(props) {
   const [sceneRef, setSceneRef] = createSignal(null);
   const [audioDuration, setAudioDuration] = createSignal(0);
   const [showSettings, setShowSettings] = createSignal(false);
+  const [volume, setVolume] = createSignal(1);
 
   const fallbackDuration = () => (
     config.output.duration
@@ -42,10 +43,12 @@ export default function Player(props) {
   if (usingAudio) {
     audioEl.preload = 'auto';
     audioEl.src = props.config.audio;
+    audioEl.volume = volume();
     audioEl.addEventListener('loadedmetadata', () => setAudioDuration(audioEl.duration));
     audioEl.addEventListener('play', () => setPlaying(true));
     audioEl.addEventListener('pause', () => setPlaying(false));
     audioEl.addEventListener('ended', () => setPlaying(false));
+    createEffect(() => { audioEl.volume = volume(); });
   }
 
   // Manual clock used only when there's no audio track to drive playback.
@@ -144,6 +147,9 @@ export default function Player(props) {
           bpm={() => config.timeline.bpm}
           onBpmChange={(v) => setConfig('timeline', 'bpm', v)}
           onSeek={seekTo}
+          usingAudio={usingAudio}
+          volume={volume}
+          onVolumeChange={setVolume}
         />
       </div>
       <Show when={showSettings()}>

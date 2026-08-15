@@ -358,6 +358,18 @@ button {
   border-color: var(--accent);
 }
 
+.volumeControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-faint);
+}
+
+.volumeControl input[type="range"] {
+  width: 80px;
+  accent-color: var(--accent);
+}
+
 .zoomControls {
   display: flex;
   align-items: center;

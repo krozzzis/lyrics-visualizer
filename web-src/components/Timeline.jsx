@@ -1,5 +1,5 @@
 import {
-  createSignal, createEffect, onMount, onCleanup,
+  createSignal, createEffect, onMount, onCleanup, Show,
 } from 'solid-js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange } from '../lib/beatGrid.js';
@@ -436,6 +436,20 @@ export default function Timeline(props) {
           />
         </div>
         <div class="spacer" />
+        <Show when={props.usingAudio}>
+          <div class="volumeControl">
+            <span>Vol</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={props.volume()}
+              onInput={(e) => props.onVolumeChange(parseFloat(e.currentTarget.value))}
+              title={`Volume ${Math.round(props.volume() * 100)}%`}
+            />
+          </div>
+        </Show>
         <div class="zoomControls">
           <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
           <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>
