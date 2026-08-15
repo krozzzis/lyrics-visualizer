@@ -27,8 +27,8 @@ const DEFAULTS = {
     overshoot: 1.7,
     zoom: {
       enabled: true,
-      from: 0.92, // scale at the instant a jump lands; < 1 punches in, > 1 punches out
-      to: 1,
+      amount: 0.88, // trough scale at the peak of the pull-back (1 = no zoom)
+      outFraction: 0.35, // portion of jumpDuration spent zooming out before it eases back in
     },
   },
   word: {

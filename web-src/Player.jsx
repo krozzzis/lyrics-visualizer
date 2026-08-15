@@ -1,10 +1,12 @@
 import {
-  createSignal, createMemo, onMount, onCleanup,
+  createSignal, createMemo, onMount, onCleanup, Show,
 } from 'solid-js';
+import { createStore } from 'solid-js/store';
 import Sidebar from './components/Sidebar.jsx';
 import Stage, { drawFrame } from './components/Stage.jsx';
 import ControlsBar from './components/ControlsBar.jsx';
 import Timeline from './components/Timeline.jsx';
+import SettingsPanel from './components/SettingsPanel.jsx';
 import { activeCueIndexAtTime } from './lib/cueIndex.js';
 
 function isTextEntry(el) {
@@ -12,30 +14,34 @@ function isTextEntry(el) {
   return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable;
 }
 
-// config and cues are loaded once by App before this component is created,
-// so they're plain (non-signal) props here — genuinely static for this
-// component's whole lifetime.
+// cues are loaded once by App before this component is created, so they're
+// a plain (non-signal) prop — genuinely static for this component's whole
+// lifetime. config becomes a reactive store here: the settings panel edits
+// it live, and Stage/Timeline re-render off the same store.
 export default function Player(props) {
-  const { config, cues } = props;
-  const usingAudio = Boolean(config.audio);
+  const { cues } = props;
+  const [config, setConfig] = createStore(props.config);
+  const usingAudio = Boolean(props.config.audio);
 
   const [currentTime, setCurrentTime] = createSignal(0);
   const [playing, setPlaying] = createSignal(false);
   const [sceneRef, setSceneRef] = createSignal(null);
   const [audioDuration, setAudioDuration] = createSignal(0);
-  // Lifted here (not local to Timeline) so global shortcuts can seek by beat.
-  const [bpm, setBpm] = createSignal((config.timeline && config.timeline.bpm) || null);
+  const [showSettings, setShowSettings] = createSignal(false);
 
-  let fallbackDuration = cues.length ? cues[cues.length - 1].end + 2 : 0;
-  if (config.output.duration) fallbackDuration = config.output.duration;
-  const duration = () => (usingAudio && audioDuration() ? audioDuration() : fallbackDuration);
+  const fallbackDuration = () => (
+    config.output.duration
+      ? config.output.duration
+      : (cues.length ? cues[cues.length - 1].end + 2 : 0)
+  );
+  const duration = () => (usingAudio && audioDuration() ? audioDuration() : fallbackDuration());
 
   const activeCueIndex = createMemo(() => activeCueIndexAtTime(cues, currentTime()));
 
   const audioEl = new Audio();
   if (usingAudio) {
     audioEl.preload = 'auto';
-    audioEl.src = config.audio;
+    audioEl.src = props.config.audio;
     audioEl.addEventListener('loadedmetadata', () => setAudioDuration(audioEl.duration));
     audioEl.addEventListener('play', () => setPlaying(true));
     audioEl.addEventListener('pause', () => setPlaying(false));
@@ -74,8 +80,8 @@ export default function Player(props) {
     if (!usingAudio && manualPlaying) {
       manualTime += (ts - lastTs) / 1000;
       lastTs = ts;
-      if (manualTime >= fallbackDuration) {
-        manualTime = fallbackDuration;
+      if (manualTime >= fallbackDuration()) {
+        manualTime = fallbackDuration();
         manualPlaying = false;
         setPlaying(false);
       }
@@ -104,7 +110,7 @@ export default function Player(props) {
         if (playing()) pause(); else play();
       } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') {
         e.preventDefault();
-        const step = bpm() ? 60 / bpm() : 5;
+        const step = config.timeline.bpm ? 60 / config.timeline.bpm : 5;
         seekTo(currentTime() + (e.code === 'ArrowRight' ? step : -step));
       } else if (e.code === 'Home') {
         e.preventDefault();
@@ -125,6 +131,8 @@ export default function Player(props) {
           duration={duration}
           onToggle={() => (playing() ? pause() : play())}
           onSeek={seekTo}
+          showSettings={showSettings}
+          onToggleSettings={() => setShowSettings((v) => !v)}
         />
         <Stage config={config} cues={cues} onReady={setSceneRef} />
         <Timeline
@@ -134,11 +142,14 @@ export default function Player(props) {
           currentTime={currentTime}
           activeIndex={activeCueIndex}
           playing={playing}
-          bpm={bpm}
-          onBpmChange={setBpm}
+          bpm={() => config.timeline.bpm}
+          onBpmChange={(v) => setConfig('timeline', 'bpm', v)}
           onSeek={seekTo}
         />
       </div>
+      <Show when={showSettings()}>
+        <SettingsPanel config={config} setConfig={setConfig} />
+      </Show>
     </div>
   );
 }

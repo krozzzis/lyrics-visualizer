@@ -6,6 +6,11 @@
 # This example points at the bundled demo subtitle so `npm run build && node
 # bin/serve.js -c config.example.yaml` works out of the box with no files of
 # your own.
+#
+# Everything below except subtitle/audio/font.path can also be tuned live in
+# the browser's Settings panel (top-right "Settings" button) — click "Save
+# to config.yaml" there to write your changes back to this file. Note that
+# doing so rewrites the file without comments (js-yaml can't preserve them).
 
 # Subtitle file: .ass (incl. \k karaoke tags), .srt or .vtt.
 subtitle: ./example/demo.ass
@@ -51,10 +56,11 @@ camera:
   # spring: oscillation count (~1.2 default).
   overshoot: 1.7
   zoom:
-    # Punch in/out on every jump, on the same eased timeline as the pan.
+    # Two-phase punch on every jump: the view first zooms OUT from 1 down to
+    # `amount`, then zooms back IN to 1 (with the easing/overshoot above).
     enabled: true
-    from: 0.92   # scale at the instant a jump lands: < 1 punches in, > 1 punches out
-    to: 1
+    amount: 0.88       # trough scale at the peak of the pull-back (1 = no zoom)
+    outFraction: 0.35  # fraction of jumpDuration spent zooming out; rest eases back in
 
 word:
   # "line": jump once per subtitle cue, exactly on its start time (default,
@@ -79,6 +85,7 @@ style:
 timeline:
   # Browser-preview-only: beat grid on the bottom timeline. Unset/null bpm
   # hides the grid entirely (the waveform and cue-block track still show).
+  # You can also set/override this live from the timeline header in the browser.
   # bpm: 120
   beatsPerBar: 4
   # Time (seconds) of the first downbeat/bar line — not just any beat. Tune

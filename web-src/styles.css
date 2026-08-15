@@ -226,6 +226,17 @@ button {
   color: var(--text);
 }
 
+.smallBtn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.smallBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ---------- Stage ---------- */
 
 #stage {
@@ -341,4 +352,130 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* ---------- Settings panel ---------- */
+
+#settingsPanel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+
+#settingsHeader {
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.settingsStatus {
+  padding: 8px 14px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settingsStatus.ok {
+  color: #7de3a0;
+}
+
+.settingsStatus.error {
+  color: #ff8080;
+}
+
+#settingsBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 14px 20px;
+}
+
+.settingsSection {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settingsSection:last-of-type {
+  border-bottom: none;
+}
+
+.settingsSection h3 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.settingsRow input[type="number"],
+.settingsRow input[type="text"],
+.settingsRow select {
+  width: 9.5em;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.settingsRow input:disabled {
+  opacity: 0.55;
+}
+
+.settingsRow input[type="number"]:focus,
+.settingsRow input[type="text"]:focus,
+.settingsRow select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.settingsRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.colorRow input[type="text"] {
+  width: 8em;
+}
+
+.colorSwatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.settingsNote {
+  margin: 16px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
 }

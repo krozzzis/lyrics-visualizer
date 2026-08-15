@@ -29,6 +29,15 @@ export default function ControlsBar(props) {
         />
         <button type="submit" class="smallBtn">Go</button>
       </form>
+      <button
+        type="button"
+        class="smallBtn"
+        classList={{ active: props.showSettings() }}
+        onClick={props.onToggleSettings}
+        title="Toggle settings panel"
+      >
+        Settings
+      </button>
     </div>
   );
 }

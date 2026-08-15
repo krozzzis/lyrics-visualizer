@@ -45,10 +45,11 @@ colors:
 ```
 
 See `config.example.yaml` for every field (camera easing/overshoot/zoom,
-word split mode, layout gaps, active/inactive line opacity). Each jump can
-also punch in/out via `camera.zoom` — scale animates on the same eased
-timeline as the pan, from `zoom.from` at the instant a jump lands to
-`zoom.to` once it settles.
+word split mode, layout gaps, active/inactive line opacity) — or tune all of
+them live from the browser's Settings panel instead of hand-editing YAML;
+see below. Every jump also does a two-phase zoom punch via `camera.zoom`:
+the view pulls OUT from scale 1 down to `zoom.amount` over the first
+`zoom.outFraction` of the jump, then eases back IN to 1.
 
 ### Why `font.path` is required
 
@@ -82,6 +83,17 @@ gets muxed into the render), or by a manual clock otherwise.
 - **Keyboard shortcuts** work anywhere on the page except while typing in a
   text field: `Space` play/pause, `←`/`→` seek by one beat (or 5s without a
   BPM), `Home` jump to the start.
+- **Settings panel** (top-right "Settings" button) edits every tunable field
+  — output size/fps/duration, colors, font size/weight/style, camera
+  timing/easing/zoom, word split mode, layout gaps, line opacity, timeline —
+  live against the running preview. `subtitle`/`audio`/`font.path` aren't
+  editable here (that needs a file-upload flow this project doesn't have);
+  edit those directly in `config.yaml`. "Save to config.yaml" writes your
+  changes back to the file the server was started with, merged onto its
+  current on-disk content — **this drops the file's comments** (js-yaml's
+  writer doesn't preserve them) and won't be reflected in `/api/data` until
+  you restart `bin/serve.js`, though the CLI renderer picks it up immediately
+  since it reads the file fresh on every run.
 
 For active UI development with hot reload, run the Vite dev server alongside
 the API/asset server it proxies to:

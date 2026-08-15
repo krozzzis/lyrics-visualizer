@@ -41,6 +41,10 @@ function easeOutBack(p, overshoot) {
   return 1 + c3 * x * x * x + c1 * x * x;
 }
 
+function easeOutQuad(p) {
+  return 1 - (1 - p) * (1 - p);
+}
+
 function easeSpring(p, overshoot) {
   const decay = 6;
   const freq = Math.max(0, overshoot) * 5;
@@ -93,18 +97,34 @@ function cameraXAtTime(keyframes, t, cameraConfig) {
   return from.x + (to.x - from.x) * eased;
 }
 
-// Returns the camera's zoom scale at time t: each jump animates from
-// camera.zoom.from to camera.zoom.to on the same eased timeline as the
-// X pan, giving a punch-in (from < 1) or punch-out (from > 1) on every
-// cut. Disabled (flat 1) unless camera.zoom.enabled.
+// Returns the camera's zoom scale at time t: a genuine two-phase punch on
+// every jump — scale first pulls OUT from 1 down to zoom.amount over the
+// first zoom.outFraction of the jump, then eases back IN to 1 (with the
+// same overshoot/settle feel as the pan) over the rest. Disabled (flat 1)
+// unless camera.zoom.enabled.
 function cameraScaleAtTime(keyframes, t, cameraConfig) {
   const zoom = cameraConfig && cameraConfig.zoom;
   if (!zoom || zoom.enabled === false || keyframes.length === 0) return 1;
 
-  const from = zoom.from ?? 0.92;
-  const to = zoom.to ?? 1;
-  const eased = jumpProgress(keyframes, t, cameraConfig);
-  return from + (to - from) * eased;
+  const idx = activeIndexAtTime(keyframes, t);
+  if (idx === -1) return 1;
+  const to = keyframes[idx];
+  const dur = Math.max(0.001, cameraConfig.jumpDuration ?? 0.22);
+  const elapsed = t - to.time;
+  if (elapsed >= dur) return 1;
+
+  const amount = zoom.amount ?? 0.88; // trough scale at the peak of the pull-back
+  const outFraction = Math.min(0.9, Math.max(0.05, zoom.outFraction ?? 0.35));
+  const p = elapsed / dur;
+
+  if (p <= outFraction) {
+    // Zoom OUT: 1 -> amount, quick and decisive.
+    const eased = easeOutQuad(p / outFraction);
+    return 1 + (amount - 1) * eased;
+  }
+  // Zoom IN: amount -> 1, snapping back with the configured overshoot.
+  const eased = applyEasing((p - outFraction) / (1 - outFraction), cameraConfig);
+  return amount + (1 - amount) * eased;
 }
 
 module.exports = {
