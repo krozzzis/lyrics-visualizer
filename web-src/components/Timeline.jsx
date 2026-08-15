@@ -378,11 +378,51 @@ export default function Timeline(props) {
     props.onBpmChange(Number.isFinite(v) && v > 0 ? v : null);
   }
 
+  // Same step the global ArrowLeft/ArrowRight shortcuts use: one beat when
+  // there's a tempo, else a flat 5s — so the buttons and keyboard agree.
+  function skipStep() {
+    const bpm = props.bpm();
+    return bpm ? 60 / bpm : 5;
+  }
+
+  function skipBy(seconds) {
+    props.onSeek(props.currentTime() + seconds);
+  }
+
+  // "Previous" mirrors typical media-player transport semantics: jump to
+  // the start of the current line if we're already a moment into it,
+  // otherwise to the previous line — so repeated presses step backward
+  // through lines instead of always snapping back to the same one.
+  const PREV_RESTART_THRESHOLD = 0.5;
+
+  function seekPrevCue() {
+    const idx = props.activeIndex();
+    if (idx < 0) { props.onSeek(0); return; }
+    const atCue = props.cues[idx];
+    if (props.currentTime() - atCue.start > PREV_RESTART_THRESHOLD) {
+      props.onSeek(atCue.start);
+    } else if (idx > 0) {
+      props.onSeek(props.cues[idx - 1].start);
+    } else {
+      props.onSeek(0);
+    }
+  }
+
+  function seekNextCue() {
+    const idx = props.activeIndex();
+    const next = props.cues[idx + 1];
+    if (next) props.onSeek(next.start);
+  }
+
   return (
     <div id="timeline">
       <div id="timelineHeader">
         <div class="transportControls">
+          <button type="button" class="transportBtn" onClick={seekPrevCue} title="Previous line">⏮</button>
+          <button type="button" class="transportBtn" onClick={() => skipBy(-skipStep())} title="Skip back">◀◀</button>
           <PlayPauseButton playing={props.playing} onToggle={props.onToggle} />
+          <button type="button" class="transportBtn" onClick={() => skipBy(skipStep())} title="Skip forward">▶▶</button>
+          <button type="button" class="transportBtn" onClick={seekNextCue} title="Next line">⏭</button>
         </div>
         <div class="bpmControl">
           <span>BPM</span>
