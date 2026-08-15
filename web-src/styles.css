@@ -437,60 +437,97 @@ button {
 }
 
 .faderColumn {
-  width: 44px;
+  width: 56px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 12px 0 10px;
+  padding: 14px 0 10px;
   border-right: 1px solid var(--border);
   background: var(--panel-alt);
 }
 
 .verticalFader {
   flex: 1;
-  width: 6px;
+  width: 36px;
   min-height: 0;
   appearance: none;
-  -webkit-appearance: slider-vertical;
   writing-mode: vertical-lr;
   direction: rtl;
-  background: transparent;
-  accent-color: var(--accent);
-  cursor: pointer;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      var(--text-faint) 0,
+      var(--text-faint) 1px,
+      transparent 1px,
+      transparent 10px
+    );
+  background-size: 10px 100%;
+  background-position: center;
+  background-repeat: repeat-y;
+  cursor: grab;
 }
 
+.verticalFader:active {
+  cursor: grabbing;
+}
+
+/* the slot the cap rides in — a recessed groove down the middle */
 .verticalFader::-webkit-slider-runnable-track {
-  width: 4px;
-  background: var(--border);
-  border-radius: 2px;
+  width: 8px;
+  background: linear-gradient(90deg, #050506, #24262f 45%, #050506);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #050506;
 }
 
+/* the cap: a chunky physical-looking handle, wider than the slot */
 .verticalFader::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 22px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--accent-strong);
-  border: 1px solid var(--panel);
-  margin-left: -9px;
-  cursor: pointer;
+  width: 36px;
+  height: 20px;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.14) 0,
+      rgba(255, 255, 255, 0.14) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(180deg, #6a6d7c 0%, #3a3c48 50%, #26272f 100%);
+  border: 1px solid #050506;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  margin-left: -18px;
+  cursor: grab;
+}
+
+.verticalFader:active::-webkit-slider-thumb {
+  cursor: grabbing;
 }
 
 .verticalFader::-moz-range-track {
-  width: 4px;
-  background: var(--border);
-  border-radius: 2px;
+  width: 8px;
+  background: linear-gradient(90deg, #050506, #24262f 45%, #050506);
+  border-radius: 3px;
 }
 
 .verticalFader::-moz-range-thumb {
-  width: 22px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--accent-strong);
-  border: 1px solid var(--panel);
-  cursor: pointer;
+  width: 36px;
+  height: 20px;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.14) 0,
+      rgba(255, 255, 255, 0.14) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(180deg, #6a6d7c 0%, #3a3c48 50%, #26272f 100%);
+  border: 1px solid #050506;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  cursor: grab;
 }
 
 .muteBtn {
