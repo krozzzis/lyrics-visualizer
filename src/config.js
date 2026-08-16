@@ -37,6 +37,11 @@ const DEFAULTS = {
   layout: {
     wordGap: 40,
     cueGap: 120,
+    mode: 'flow', // 'flow' (single long line) | 'stacked' (logical lines stacked vertically)
+    lineHeight: 1.6, // stacked mode: row spacing, as a multiple of font.size
+    showPrevLine: true, // stacked mode: render the line above the active one
+    showNextLine: true, // stacked mode: render the line below the active one
+    nextLineFrom: 'start', // stacked mode: 'start' (rows share a left edge) | 'end' (next row's first word starts under the current row's last word)
   },
   style: {
     activeOpacity: 1,

@@ -1,6 +1,6 @@
 const { fontString, computeLayout } = require('./layout');
 const {
-  buildKeyframes, cameraXAtTime, cameraScaleAtTime, activeIndexAtTime,
+  buildKeyframes, cameraXAtTime, cameraYAtTime, cameraScaleAtTime, activeIndexAtTime,
 } = require('./camera');
 const { toCanvasFill } = require('./color');
 
@@ -8,7 +8,7 @@ const { toCanvasFill } = require('./color');
 // layout positions and camera keyframes. Call once per (config, cues, ctx).
 function prepareScene(ctx, cues, config) {
   ctx.font = fontString(config.font);
-  const layout = computeLayout(ctx, cues, config.layout);
+  const layout = computeLayout(ctx, cues, config.layout, config.font);
   const keyframes = buildKeyframes(layout.cues, config);
   return { layout, keyframes };
 }
@@ -28,9 +28,13 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
   }
 
   const cameraX = cameraXAtTime(keyframes, t, config.camera);
+  const cameraY = cameraYAtTime(keyframes, t, config.camera);
   const cameraScale = cameraScaleAtTime(keyframes, t, config.camera);
   const activeKeyframeIdx = activeIndexAtTime(keyframes, t);
   const activeCueIndex = activeKeyframeIdx === -1 ? -1 : keyframes[activeKeyframeIdx].cueIndex;
+  const activeLineIndex = activeCueIndex !== -1 && layout.cues[activeCueIndex]
+    ? layout.cues[activeCueIndex].lineIndex
+    : 0;
 
   ctx.font = fontString(config.font);
   ctx.textAlign = 'left';
@@ -43,6 +47,10 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
   const activeOpacity = config.style && config.style.activeOpacity != null
     ? config.style.activeOpacity
     : 1;
+  // Stacked mode only — in flow mode every word's lineIndex is 0, so these
+  // never exclude anything (rowDelta is always 0, within [-1, 1] regardless).
+  const showPrevLine = !config.layout || config.layout.showPrevLine !== false;
+  const showNextLine = !config.layout || config.layout.showNextLine !== false;
 
   const centerX = width / 2;
   const centerY = height / 2;
@@ -61,11 +69,16 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
   ctx.translate(-centerX, -centerY);
   for (const word of layout.words) {
     if (word.x + word.width < viewMinX || word.x > viewMaxX) continue;
+    const rowDelta = word.lineIndex - activeLineIndex;
+    if (rowDelta < -1 || rowDelta > 1) continue;
+    if (rowDelta === -1 && !showPrevLine) continue;
+    if (rowDelta === 1 && !showNextLine) continue;
     const screenX = word.x - cameraX + centerX;
+    const screenY = word.y - cameraY + centerY;
     const opacity = word.cueIndex === activeCueIndex ? activeOpacity : inactiveOpacity;
     if (opacity <= 0) continue;
     ctx.globalAlpha = opacity;
-    ctx.fillText(word.text, screenX, centerY);
+    ctx.fillText(word.text, screenX, screenY);
   }
   ctx.restore();
   ctx.globalAlpha = 1;

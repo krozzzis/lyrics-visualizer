@@ -19,14 +19,18 @@ function buildKeyframes(layoutCues, config) {
 
     if (hasWordTiming) {
       for (const w of cue.words) {
-        keyframes.push({ time: w.start, x: w.x + w.width / 2, cueIndex: cue.cueIndex });
+        keyframes.push({
+          time: w.start, x: w.x + w.width / 2, y: w.y, cueIndex: cue.cueIndex,
+        });
       }
     } else {
       const first = cue.words[0];
       const anchorX = anchor === 'start'
         ? (first ? first.x + first.width / 2 : cue.startX)
         : cue.centerX;
-      keyframes.push({ time: cue.start, x: anchorX, cueIndex: cue.cueIndex });
+      keyframes.push({
+        time: cue.start, x: anchorX, y: cue.y, cueIndex: cue.cueIndex,
+      });
     }
   }
 
@@ -97,6 +101,26 @@ function cameraXAtTime(keyframes, t, cameraConfig) {
   return from.x + (to.x - from.x) * eased;
 }
 
+// Returns the camera's target Y at time t — same shape as cameraXAtTime.
+// In flow mode every keyframe's y is 0, so this is always 0 (from.y === to.y
+// short-circuits before any easing math runs). In stacked mode, keyframes
+// within the same logical line share their row's y, so the camera only
+// actually moves vertically — with the same jump/ease curve as X — on a
+// transition to a different line, never mid-line.
+function cameraYAtTime(keyframes, t, cameraConfig) {
+  if (keyframes.length === 0) return 0;
+
+  const idx = activeIndexAtTime(keyframes, t);
+  if (idx === -1) return keyframes[0].y;
+
+  const to = keyframes[idx];
+  const from = idx > 0 ? keyframes[idx - 1] : to;
+  if (from.y === to.y) return to.y;
+
+  const eased = jumpProgress(keyframes, t, cameraConfig);
+  return from.y + (to.y - from.y) * eased;
+}
+
 // Returns the camera's zoom scale at time t: a genuine two-phase punch on
 // every jump — scale first pulls OUT from 1 down to zoom.amount over the
 // first zoom.outFraction of the jump, then eases back IN to 1 (with the
@@ -128,5 +152,5 @@ function cameraScaleAtTime(keyframes, t, cameraConfig) {
 }
 
 module.exports = {
-  buildKeyframes, cameraXAtTime, cameraScaleAtTime, activeIndexAtTime,
+  buildKeyframes, cameraXAtTime, cameraYAtTime, cameraScaleAtTime, activeIndexAtTime,
 };

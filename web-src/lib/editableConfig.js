@@ -24,7 +24,15 @@ export function buildEditablePayload(config) {
       },
     },
     word: { splitMode: config.word.splitMode },
-    layout: { wordGap: config.layout.wordGap, cueGap: config.layout.cueGap },
+    layout: {
+      wordGap: config.layout.wordGap,
+      cueGap: config.layout.cueGap,
+      mode: config.layout.mode,
+      lineHeight: config.layout.lineHeight,
+      showPrevLine: config.layout.showPrevLine,
+      showNextLine: config.layout.showNextLine,
+      nextLineFrom: config.layout.nextLineFrom,
+    },
     style: { activeOpacity: config.style.activeOpacity, inactiveOpacity: config.style.inactiveOpacity },
     timeline: {
       bpm: config.timeline.bpm,

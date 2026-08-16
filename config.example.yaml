@@ -76,6 +76,21 @@ layout:
   # Horizontal gap in px between words, and extra gap between cues/lines.
   wordGap: 40
   cueGap: 140
+  # 'flow' (default): every word flows along one long horizontal line.
+  # 'stacked': cues grouped into logical lines (see the timeline's Group/
+  # Ungroup buttons) each flow in their own row; rows stack vertically and
+  # the camera jumps on line transitions too, not just cue transitions.
+  mode: flow
+  # Stacked mode only, below this point.
+  # Row spacing, as a multiple of font.size.
+  lineHeight: 1.6
+  # Render the logical line above/below the active one.
+  showPrevLine: true
+  showNextLine: true
+  # How the next line's row lines up with the current one: 'start' — every
+  # row shares a left edge; 'end' — the next row's first word starts
+  # directly under the current row's last word (as if unwrapping one flow).
+  nextLineFrom: start
 
 style:
   # Opacity of the active vs. all other lines, for readability.
