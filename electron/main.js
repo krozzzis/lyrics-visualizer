@@ -13,6 +13,14 @@ const STATE_PATH = path.join(app.getPath('userData'), 'state.json');
 let win = null;
 let httpServer = null;
 let currentConfigPath = null;
+// http.Server#close() only stops accepting new connections — it waits for
+// every existing (e.g. keep-alive) connection to end before its callback
+// fires. The window's page still holds one open to the server it's
+// currently showing, and won't drop it until *after* we navigate away —
+// which happens after closeCurrentServer() resolves. That's a deadlock, not
+// a slow close: tracking and force-closing sockets ourselves is required,
+// not an optimization.
+const openSockets = new Set();
 
 function readState() {
   try {
@@ -31,18 +39,31 @@ function writeState(state) {
   }
 }
 
-function closeCurrentServer() {
-  return new Promise((resolve) => {
-    if (httpServer) httpServer.close(() => resolve());
-    else resolve();
+function trackSockets(server) {
+  server.on('connection', (socket) => {
+    openSockets.add(socket);
+    socket.on('close', () => openSockets.delete(socket));
   });
 }
 
-// Assets a fresh project needs (a font + a subtitle it can already play) —
-// bundled next to the app in dev, or under resourcesPath once packaged (see
-// flake.nix's electron-app derivation, which copies example/ alongside).
+function closeCurrentServer() {
+  return new Promise((resolve) => {
+    if (!httpServer) return resolve();
+    httpServer.close(() => resolve());
+    for (const socket of openSockets) socket.destroy();
+    openSockets.clear();
+    return undefined;
+  });
+}
+
+// Assets a fresh project needs (a font + a subtitle it can already play).
+// electron/main.js always sits at <appRoot>/electron/ — in dev, in the
+// native Nix package, and in both cross-built resources/app trees alike —
+// and every one of those layouts copies example/ in as a sibling of
+// electron/ (see flake.nix's appResources), so this needs no app.isPackaged
+// branch: REPO_ROOT already *is* the right appRoot in every case.
 function bundledExampleDir() {
-  return app.isPackaged ? path.join(process.resourcesPath, 'example') : path.join(REPO_ROOT, 'example');
+  return path.join(REPO_ROOT, 'example');
 }
 
 function scaffoldProject(dir) {
@@ -67,7 +88,27 @@ function scaffoldProject(dir) {
   return configPath;
 }
 
+// closeCurrentServer() only stops new connections — it doesn't kill an
+// in-flight renderVideo()/ffmpeg, which would otherwise keep writing into
+// the project being switched away from, invisibly.
+async function hasActiveRender() {
+  if (!httpServer) return false;
+  try {
+    const { port } = httpServer.address();
+    const res = await fetch(`http://127.0.0.1:${port}/api/render/status`);
+    const { status } = await res.json();
+    return status === 'running';
+  } catch {
+    return false;
+  }
+}
+
 async function openProject(configPath) {
+  if (await hasActiveRender()) {
+    dialog.showErrorBox('Render in progress', 'Wait for the current render to finish before switching projects.');
+    return false;
+  }
+
   let expressApp;
   try {
     ({ app: expressApp } = createServer(configPath));
@@ -81,6 +122,7 @@ async function openProject(configPath) {
     const server = expressApp.listen(0, '127.0.0.1', () => resolve(server));
     server.once('error', reject);
   });
+  trackSockets(httpServer);
 
   currentConfigPath = configPath;
   writeState({ lastProject: configPath });
@@ -152,7 +194,10 @@ function buildMenu() {
         { type: 'separator' },
         {
           label: 'Render Video',
-          accelerator: 'CmdOrCtrl+R',
+          // Not CmdOrCtrl+R: that's View > Reload's default accelerator
+          // (would silently lose the binding), and a reflex key is a bad
+          // fit for kicking off a multi-minute ffmpeg render anyway.
+          accelerator: 'CmdOrCtrl+Shift+R',
           click: () => win?.webContents.send('menu:render-video'),
         },
         { type: 'separator' },
@@ -256,9 +301,13 @@ if (!app.requestSingleInstanceLock()) {
     buildMenu();
     createWindow();
 
+    // A remembered project whose config.yaml exists but fails to load
+    // (subtitle deleted, bad YAML, ...) must still fall through to the
+    // picker — not dead-end into app.quit() on every future launch just
+    // because openProject() returned false.
     const remembered = await resolveInitialProject();
-    if (remembered) await openProject(remembered);
-    else await promptForInitialProject();
+    const opened = remembered && await openProject(remembered);
+    if (!opened) await promptForInitialProject();
 
     if (!currentConfigPath) app.quit();
   });

@@ -43,8 +43,14 @@
           # (nixpkgs' or a fetched platform zip).
           ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
 
+          # buildNpmPackage normally runs `npm prune --omit=dev` itself as
+          # part of npmInstallHook — but a fully custom installPhase (below)
+          # skips that hook entirely, so devDependencies (vite, esbuild,
+          # rollup's platform binaries, playwright-core, electron itself)
+          # would otherwise ship inside node_modules unpruned.
           installPhase = ''
             runHook preInstall
+            npm prune --omit=dev
             mkdir -p $out
             cp -r electron src bin example package.json package-lock.json web node_modules $out/
             runHook postInstall
