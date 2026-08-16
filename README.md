@@ -1,11 +1,14 @@
 # lyrics-visualizer
 
-Lyric video visualizer: every subtitle line flows word-by-word along a single
-long horizontal line, black text on a white (or transparent) background. The
-camera jumps to center the current word/line on each subtitle timestamp — so
-the cuts land on the beat, not on an interpolated guess. Play it live in a
-browser, or render it offline to a video file with ffmpeg. Both paths share
-the exact same layout and drawing code, so what you preview is what you get.
+Lyric video visualizer: by default every subtitle line flows word-by-word
+along a single long horizontal line, black text on a white (or transparent)
+background. The camera jumps to center the current word/line on each
+subtitle timestamp — so the cuts land on the beat, not on an interpolated
+guess. An opt-in stacked mode (`layout.mode: stacked`) groups cue blocks into
+logical lines and stacks them vertically instead, with the camera jumping in
+Y on a line change; see `config.example.yaml`. Play it live in a browser, or
+render it offline to a video file with ffmpeg. Both paths share the exact
+same layout and drawing code, so what you preview is what you get.
 
 ## Setup
 
@@ -75,11 +78,19 @@ gets muxed into the render), or by a manual clock otherwise.
   active one, and clicking a line seeks straight to it.
 - **Bottom timeline** is a DAW-style transport: waveform (decoded client-side
   via Web Audio, so no server-side processing), a beat grid, a track of cue
-  blocks (one per subtitle line, active one highlighted), and a playhead.
+  blocks (one per subtitle fragment, active one highlighted), and a playhead.
   Click to seek, drag to pan, scroll/trackpad to pan, ctrl+scroll or the
   `−`/`Fit`/`+` buttons to zoom. Set a BPM in the header to turn on the grid
   and bar-numbered ruler — it's a live override for the preview, independent
   of `timeline.bpm` in the config (set that too if you want it to stick).
+  Drag a block's edge to resize it (its neighbor's shared border is
+  highlighted while dragging), drag its body to move it, click to select
+  (shift/ctrl-click to multi-select), `Delete`/`Backspace` to remove the
+  selection, `✂` to slice the block under the playhead in two, `➕` to insert
+  a new block there. Multi-select several blocks and hit `Group` to merge
+  them into one logical line for the stacked animation mode (`Ungroup` to
+  split them back out) — grouped blocks show a colored bar underneath them,
+  a different color per line so adjacent groups stay visually distinct.
 - **Keyboard shortcuts** work anywhere on the page except while typing in a
   text field: `Space` play/pause, `←`/`→` seek by one beat (or 5s without a
   BPM), `Home` jump to the start.
@@ -139,8 +150,10 @@ node bin/render.js frame -c config.yaml -t 65.5    # single PNG at t=65.5s
 
 ```
 src/subtitles/   .ass / .srt / .vtt  →  unified cues [{ start, end, text, words }]
-src/layout.js    cues + canvas ctx   →  word x-positions on one long line
-src/camera.js    layout + config     →  jump keyframes, eased camera-x(t)/scale(t)
+src/lines.js     cues (+ lineId)     →  logical lines (groups of fragment cues)
+src/layout.js    cues + canvas ctx   →  word positions — one long line, or (layout.mode:
+                                        stacked) rows per logical line stacked vertically
+src/camera.js    layout + config     →  jump keyframes, eased camera-x(t)/y(t)/scale(t)
 src/scene.js     drawFrame(ctx, ...) →  the one draw routine both runtimes call
 src/config.js    config.yaml         →  validated, path-resolved config object
 bin/render.js    Node CLI:  dump | frame | video (drives @napi-rs/canvas + ffmpeg)
@@ -149,7 +162,7 @@ web-src/         SolidJS browser player (Player, Sidebar, Timeline, Stage, Contr
 web/dist/        Vite build output — gitignored, produced by `npm run build`
 ```
 
-`src/color.js`, `src/layout.js`, `src/camera.js`, `src/scene.js` are plain
+`src/color.js`, `src/lines.js`, `src/layout.js`, `src/camera.js`, `src/scene.js` are plain
 CommonJS, `require()`d directly by `bin/render.js` **and** bundled into the
 browser build by Vite (`web-src/components/Stage.jsx` imports `src/scene.js`
 straight from outside `web-src/`) — one `drawFrame()`, two runtimes, so the
