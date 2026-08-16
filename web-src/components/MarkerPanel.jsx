@@ -8,10 +8,10 @@ import { resolveConfigAt, sortMarkers } from '../../src/configMarkers.js';
 // turned on, so a marker only ever changes exactly the fields the user
 // actually asked it to.
 //
-// Only camera/colors/style are exposed — the sections drawFrame/buildKeyframes
-// actually resolve per-time/per-cue. layout/font/output stay global (see
-// OVERRIDABLE_SECTIONS in src/configMarkers.js) since they feed the single
-// shared word-layout pass; showing them here would silently no-op.
+// camera/colors/style/layout are exposed — the sections drawFrame/
+// buildKeyframes/computeLayout actually resolve per-time/per-cue/per-row
+// (see OVERRIDABLE_SECTIONS in src/configMarkers.js). font/output stay
+// global; showing them here would silently no-op.
 
 function toNumber(raw, fallback = 0) {
   const v = parseFloat(raw);
@@ -134,6 +134,47 @@ export default function MarkerPanel(props) {
           <OverrideRow label="Zoom out fraction" path={['camera', 'zoom', 'outFraction']}>
             <input type="number" step="0.05" min="0.05" max="0.9" value={effectiveValue(['camera', 'zoom', 'outFraction'])}
               onInput={(e) => props.onSetOverride(['camera', 'zoom', 'outFraction'], toNumber(e.currentTarget.value, effectiveValue(['camera', 'zoom', 'outFraction'])))} />
+          </OverrideRow>
+        </Section>
+
+        <Section title="Layout">
+          <OverrideRow label="Mode" path={['layout', 'mode']}>
+            <select
+              value={effectiveValue(['layout', 'mode'])}
+              onChange={(e) => props.onSetOverride(['layout', 'mode'], e.currentTarget.value)}
+            >
+              <option value="flow">flow (one long line)</option>
+              <option value="stacked">stacked (logical lines)</option>
+            </select>
+          </OverrideRow>
+          <OverrideRow label="Word gap (px)" path={['layout', 'wordGap']}>
+            <input type="number" step="1" value={effectiveValue(['layout', 'wordGap'])}
+              onInput={(e) => props.onSetOverride(['layout', 'wordGap'], toNumber(e.currentTarget.value, effectiveValue(['layout', 'wordGap'])))} />
+          </OverrideRow>
+          <OverrideRow label="Cue gap (px)" path={['layout', 'cueGap']}>
+            <input type="number" step="1" value={effectiveValue(['layout', 'cueGap'])}
+              onInput={(e) => props.onSetOverride(['layout', 'cueGap'], toNumber(e.currentTarget.value, effectiveValue(['layout', 'cueGap'])))} />
+          </OverrideRow>
+          <OverrideRow label="Row height (× font size)" path={['layout', 'lineHeight']}>
+            <input type="number" step="0.1" min="0.5" value={effectiveValue(['layout', 'lineHeight'])}
+              onInput={(e) => props.onSetOverride(['layout', 'lineHeight'], toNumber(e.currentTarget.value, effectiveValue(['layout', 'lineHeight'])))} />
+          </OverrideRow>
+          <OverrideRow label="Show previous line" path={['layout', 'showPrevLine']}>
+            <input type="checkbox" checked={effectiveValue(['layout', 'showPrevLine'])}
+              onChange={(e) => props.onSetOverride(['layout', 'showPrevLine'], e.currentTarget.checked)} />
+          </OverrideRow>
+          <OverrideRow label="Show next line" path={['layout', 'showNextLine']}>
+            <input type="checkbox" checked={effectiveValue(['layout', 'showNextLine'])}
+              onChange={(e) => props.onSetOverride(['layout', 'showNextLine'], e.currentTarget.checked)} />
+          </OverrideRow>
+          <OverrideRow label="Next line starts from" path={['layout', 'nextLineFrom']}>
+            <select
+              value={effectiveValue(['layout', 'nextLineFrom'])}
+              onChange={(e) => props.onSetOverride(['layout', 'nextLineFrom'], e.currentTarget.value)}
+            >
+              <option value="start">start (shared left edge)</option>
+              <option value="end">end (continues under current line)</option>
+            </select>
           </OverrideRow>
         </Section>
 

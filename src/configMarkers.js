@@ -3,12 +3,13 @@ const path = require('path');
 const { deepMerge } = require('./config');
 
 // Timeline markers let specific config sections (currently camera/colors/
-// style — see resolveConfigAt) change value at a point in time instead of
-// staying fixed for the whole video, without making every consumer of
-// `config` carry its own time parameter. They live in their own JSON file
-// next to config.yaml (like the native cue JSON lives next to the subtitle
-// source) rather than inside config.yaml itself, so dragging a marker on the
-// timeline doesn't rewrite/thrash the user's hand-edited config.yaml.
+// style/layout — see resolveConfigAt) change value at a point in time
+// instead of staying fixed for the whole video, without making every
+// consumer of `config` carry its own time parameter. They live in their own
+// JSON file next to config.yaml (like the native cue JSON lives next to the
+// subtitle source) rather than inside config.yaml itself, so dragging a
+// marker on the timeline doesn't rewrite/thrash the user's hand-edited
+// config.yaml.
 
 function markersPath(configPath) {
   return path.join(path.dirname(path.resolve(configPath)), 'config-markers.json');
@@ -33,13 +34,15 @@ function sortMarkers(markers) {
 }
 
 // Only these top-level config sections can be locally overridden by a
-// marker: they're the ones already read fresh per-frame (or per-cue, for
-// camera.anchor) rather than baked once into the shared word layout — see
-// buildKeyframes (src/camera.js) and drawFrame (src/scene.js). layout/font/
-// output stay global: they feed the single computeLayout() pass that lays
-// out every word once for the whole timeline, so a local override there
-// would either be ignored or require relayout — out of scope here.
-const OVERRIDABLE_SECTIONS = ['camera', 'colors', 'style'];
+// marker: they're the ones resolved per-cue/per-row (camera.anchor in
+// buildKeyframes, layout.* in computeLayout — see src/layout.js) or live
+// per-frame (colors/style in drawFrame — see perCueStyle in src/scene.js).
+// font/output stay global: font feeds the single glyph-measurement pass
+// computeLayout depends on (mid-video font changes would invalidate every
+// position already measured with the old font), and output is the render
+// target itself (dimensions/fps), neither of which has a meaningful
+// "per-cue" reading.
+const OVERRIDABLE_SECTIONS = ['camera', 'colors', 'style', 'layout'];
 
 function sanitizeOverrides(overrides) {
   const out = {};

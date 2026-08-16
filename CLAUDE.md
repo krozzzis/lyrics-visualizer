@@ -9,16 +9,20 @@ video file via ffmpeg — both paths share the same layout/draw code
 output are pixel-identical. See `README.md` for user-facing setup/config
 docs.
 
-Config is not fully global: `camera`/`colors`/`style` can be locally
-overridden from a point in time onward via config markers
+Config is not fully global: `camera`/`colors`/`style`/`layout` can be
+locally overridden from a point in time onward via config markers
 (`src/configMarkers.js`, `config-markers.json` next to `config.yaml`) —
-`layout`/`font`/`output` stay global since they feed the single shared word-
-layout pass. `resolveConfigAt(config, sortedMarkers, t)` is the one place
-that resolution happens; `buildKeyframes` (src/camera.js) resolves
-`camera.anchor` per-cue, `drawFrame` (src/scene.js) resolves the rest
-per-frame. If you add a new config field that should be markerable, it must
-go through this resolver, not be read straight off `config` in a per-frame/
-per-cue code path.
+`font`/`output` stay global (font feeds the single glyph-measurement pass
+`computeLayout` depends on; output is the render target itself).
+`resolveConfigAt(config, sortedMarkers, t)` is the one place that resolution
+happens; `buildKeyframes` (src/camera.js) resolves `camera.anchor` per-cue,
+`computeLayout` (src/layout.js) resolves `layout.*` per-cue/per-row —
+including segmenting the cue list wherever `layout.mode` itself changes, so
+flow and stacked runs can be spliced together — and `drawFrame`
+(src/scene.js) resolves the rest per-frame or (colors/style/row-visibility)
+per-cue via `perCueStyle`. If you add a new config field that should be
+markerable, it must go through this resolver, not be read straight off
+`config` in a per-frame/per-cue/per-row code path.
 
 ## Architecture
 

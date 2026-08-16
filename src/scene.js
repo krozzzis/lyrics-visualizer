@@ -16,28 +16,34 @@ const {
 // below). Call once per (config, cues, markers, ctx).
 function prepareScene(ctx, cues, config, markers = []) {
   ctx.font = fontString(config.font);
-  const layout = computeLayout(ctx, cues, config.layout, config.font);
   const sortedMarkers = sortMarkers(markers);
+  const layout = computeLayout(ctx, cues, config, sortedMarkers, config.font);
   const keyframes = buildKeyframes(layout.cues, config, sortedMarkers);
   const cueSupersedeTime = computeCueSupersedeTimes(keyframes, layout.cues.length);
   const lineSupersedeTime = computeLineSupersedeTimes(keyframes, layout.cues);
-  // A marker's colors/style overrides are about which *cues* they paint, not
-  // which frames — a marker crossed mid-screen (e.g. while the previous line
-  // is still visible via layout.showPrevLine, or fading out via
-  // style.fadeOut/cueExit) must not repaint that older cue. So each cue
-  // resolves its own text color/opacity/exit style once, at its own start
-  // time, the same way buildKeyframes resolves camera.anchor per-cue above —
-  // not live against the playhead like colors.background (one value per
-  // frame, so it has no "owning cue" to pin to) still is in drawFrame.
+  // A marker's colors/style/layout overrides are about which *cues* they
+  // paint, not which frames — a marker crossed mid-screen (e.g. while the
+  // previous line is still visible via layout.showPrevLine, or fading out
+  // via style.fadeOut/cueExit) must not repaint that older cue. So each cue
+  // resolves its own text color/opacity/exit style/row-visibility once, at
+  // its own start time, the same way buildKeyframes resolves camera.anchor
+  // per-cue above — not live against the playhead like colors.background
+  // (one value per frame, so it has no "owning cue" to pin to) still is in
+  // drawFrame. wordGap/cueGap/lineHeight/nextLineFrom/mode are resolved
+  // separately, inside computeLayout itself, since they shape word
+  // *positions* rather than how an already-positioned word is painted.
   const perCueStyle = layout.cues.map((cue) => {
     const resolved = resolveConfigAt(config, sortedMarkers, cue.start);
     const style = resolved.style || {};
+    const layoutCfg = resolved.layout || {};
     return {
       textFill: toCanvasFill(resolved.colors.text) || 'rgba(0,0,0,1)',
       activeOpacity: style.activeOpacity != null ? style.activeOpacity : 1,
       inactiveOpacity: style.inactiveOpacity != null ? style.inactiveOpacity : 0.35,
       cueExitCfg: style.cueExit,
       fadeOutCfg: style.fadeOut,
+      showPrevLine: layoutCfg.showPrevLine !== false,
+      showNextLine: layoutCfg.showNextLine !== false,
     };
   });
   return {
@@ -89,12 +95,22 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
   ctx.textBaseline = 'middle';
 
   const defaultCueStyle = {
-    textFill: 'rgba(0,0,0,1)', activeOpacity: 1, inactiveOpacity: 0.35, cueExitCfg: undefined, fadeOutCfg: undefined,
+    textFill: 'rgba(0,0,0,1)',
+    activeOpacity: 1,
+    inactiveOpacity: 0.35,
+    cueExitCfg: undefined,
+    fadeOutCfg: undefined,
+    showPrevLine: true,
+    showNextLine: true,
   };
   // Stacked mode only — in flow mode every word's lineIndex is 0, so these
   // never exclude anything (rowDelta is always 0, within [-1, 1] regardless).
-  const showPrevLine = !config.layout || config.layout.showPrevLine !== false;
-  const showNextLine = !config.layout || config.layout.showNextLine !== false;
+  // Read off the *active* cue's own resolved layout — it describes what the
+  // active row shows around itself, so (unlike wordGap/cueGap/etc., which
+  // are baked into word positions once in computeLayout) this one field
+  // still needs a per-frame lookup, keyed by whichever cue is active now.
+  const activeRowStyle = activeCueIndex !== -1 ? (perCueStyle[activeCueIndex] || defaultCueStyle) : defaultCueStyle;
+  const { showPrevLine, showNextLine } = activeRowStyle;
 
   const centerX = width / 2;
   const centerY = height / 2;
