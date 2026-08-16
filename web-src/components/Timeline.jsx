@@ -15,6 +15,7 @@ const COLORS = {
   blockFill: '#23252e',
   blockBorder: '#33353f',
   blockFillActive: '#7c5cff',
+  blockSelectedOutline: '#ffffff',
   blockText: '#9297a3',
   blockTextActive: '#ffffff',
   playhead: '#ffffff',
@@ -137,19 +138,30 @@ export default function Timeline(props) {
     return null;
   }
 
-  // --- pointer interaction: click to seek, drag to pan, drag an edge to resize ---
+  // --- pointer interaction: click to seek/select, drag to pan, drag an edge
+  // to resize, drag a block's body to move it ---
   onMount(() => {
     let dragging = false;
     let dragged = false;
     let startX = 0;
     let startOffset = 0;
     let resizing = null; // { index, edge } while a resize drag is active
+    let moving = null; // { index, offset, moved } while a move drag is active
 
     function onPointerDown(e) {
       const rect = viewportEl.getBoundingClientRect();
-      const hit = resizeHandleAt(e.clientX - rect.left, e.clientY - rect.top);
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const hit = resizeHandleAt(x, y);
       if (hit) {
         resizing = hit;
+        viewportEl.setPointerCapture(e.pointerId);
+        return;
+      }
+      const cueIdx = cueIndexAt(x, y);
+      if (cueIdx >= 0) {
+        const t = scrollOffset() + x / pxPerSecond();
+        moving = { index: cueIdx, offset: t - props.cues[cueIdx].start, moved: false };
         viewportEl.setPointerCapture(e.pointerId);
         return;
       }
@@ -167,6 +179,17 @@ export default function Timeline(props) {
 
       if (resizing) {
         props.onResizeCue(resizing.index, resizing.edge, scrollOffset() + x / pxPerSecond());
+        return;
+      }
+      if (moving) {
+        const t = scrollOffset() + x / pxPerSecond();
+        if (!moving.moved && Math.abs((t - moving.offset - props.cues[moving.index].start) * pxPerSecond()) > DRAG_THRESHOLD) {
+          moving.moved = true;
+        }
+        if (moving.moved) {
+          markInteracting();
+          props.onMoveCue(moving.index, t - moving.offset);
+        }
         return;
       }
       if (dragging) {
@@ -188,6 +211,16 @@ export default function Timeline(props) {
         props.onResizeCommit();
         return;
       }
+      if (moving) {
+        const { index, moved } = moving;
+        moving = null;
+        if (moved) {
+          props.onMoveCommit();
+        } else {
+          props.onSelectCue(index);
+        }
+        return;
+      }
       if (!dragging) return;
       dragging = false;
       viewportEl.classList.remove('dragging');
@@ -196,6 +229,7 @@ export default function Timeline(props) {
         const x = e.clientX - rect.left;
         const t = scrollOffset() + x / pxPerSecond();
         const tl = props.config.timeline || {};
+        props.onSelectCue(null);
         props.onSeek(props.snapEnabled() ? snapToGrid(t, props.bpm(), tl.beatsPerBar, tl.gridOffset || 0) : t);
       } else {
         markInteracting();
@@ -434,6 +468,7 @@ export default function Timeline(props) {
 
     // Cue blocks
     const activeIdx = props.activeIndex();
+    const selectedIdx = props.selectedIndex();
     props.cues.forEach((cue, i) => {
       if (cue.end < start || cue.start > end) return;
       const x1 = (cue.start - start) * px;
@@ -446,6 +481,12 @@ export default function Timeline(props) {
       if (!active) {
         ctx.strokeStyle = COLORS.blockBorder;
         ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      if (i === selectedIdx) {
+        ctx.strokeStyle = COLORS.blockSelectedOutline;
+        ctx.lineWidth = 2;
+        roundRect(ctx, x1 + 1, blockY + 1, Math.max(1, w - 2), blockH - 2, 4);
         ctx.stroke();
       }
       if (w > 14) {
@@ -531,6 +572,7 @@ export default function Timeline(props) {
     // fields must be read here explicitly or an edit wouldn't repaint.
     props.currentTime();
     props.activeIndex();
+    props.selectedIndex();
     props.bpm();
     containerSize();
     pxPerSecond();

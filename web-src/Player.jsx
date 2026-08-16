@@ -36,6 +36,7 @@ export default function Player(props) {
   const [muted, setMuted] = createSignal(false);
   const [snapEnabled, setSnapEnabled] = createSignal(false);
   const [linkResize, setLinkResize] = createSignal(false);
+  const [selectedCueIndex, setSelectedCueIndex] = createSignal(null);
 
   const sidebarPanel = createResizablePanel('sidebar', {
     defaultSize: 300, min: 200, max: 520, axis: 'x',
@@ -108,6 +109,14 @@ export default function Player(props) {
       { start: t, end: cue.end, text: secondWords.map((w) => w.text).join(' '), words: secondWords },
       ...cues.slice(idx + 1),
     ]);
+    setSelectedCueIndex(null); // indices past idx have shifted
+    persistCues();
+  }
+
+  function deleteCue(index) {
+    if (index < 0 || index >= cues.length) return;
+    setCues(cues.filter((_, i) => i !== index));
+    setSelectedCueIndex(null);
     persistCues();
   }
 
@@ -121,7 +130,7 @@ export default function Player(props) {
   // edge is dragged along with it — otherwise the neighbor is untouched and
   // the shared-border clamp just prevents crossing into it, same as if
   // linking were off. Called continuously during a drag; not persisted here
-  // (see commitCueResize) so a drag doesn't flood the server with saves.
+  // (see commitCueEdit) so a drag doesn't flood the server with saves.
   function resizeCueEdge(index, edge, rawTime) {
     const tl = config.timeline || {};
     const t = snapEnabled() ? snapToGrid(rawTime, tl.bpm, tl.beatsPerBar, tl.gridOffset || 0) : rawTime;
@@ -144,7 +153,25 @@ export default function Player(props) {
     }
   }
 
-  function commitCueResize() {
+  // Drags a whole cue to a new position, keeping its duration fixed. rawStart
+  // is the cue's would-be start under the pointer (snapped first, if
+  // enabled); clamped so it can't cross into a neighbor. Same
+  // continuous-during-drag / commit-on-release split as resizeCueEdge.
+  function moveCueTo(index, rawStart) {
+    const tl = config.timeline || {};
+    const cue = cues[index];
+    const dur = cue.end - cue.start;
+    const start = snapEnabled() ? snapToGrid(rawStart, tl.bpm, tl.beatsPerBar, tl.gridOffset || 0) : rawStart;
+    const prev = cues[index - 1];
+    const next = cues[index + 1];
+    const lower = prev ? prev.end : 0;
+    const upper = (next ? next.start : duration()) - dur;
+    const clamped = Math.max(lower, Math.min(upper, start));
+    setCues(index, 'start', clamped);
+    setCues(index, 'end', clamped + dur);
+  }
+
+  function commitCueEdit() {
     persistCues();
   }
 
@@ -231,6 +258,11 @@ export default function Player(props) {
       } else if (e.code === 'KeyS') {
         e.preventDefault();
         sliceAtCursor();
+      } else if (e.code === 'Delete' || e.code === 'Backspace') {
+        if (selectedCueIndex() != null) {
+          e.preventDefault();
+          deleteCue(selectedCueIndex());
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -280,7 +312,11 @@ export default function Player(props) {
           linkResize={linkResize}
           onToggleLinkResize={() => setLinkResize((v) => !v)}
           onResizeCue={resizeCueEdge}
-          onResizeCommit={commitCueResize}
+          onResizeCommit={commitCueEdit}
+          onMoveCue={moveCueTo}
+          onMoveCommit={commitCueEdit}
+          selectedIndex={selectedCueIndex}
+          onSelectCue={setSelectedCueIndex}
         />
       </div>
       <Show when={showSettings()}>
