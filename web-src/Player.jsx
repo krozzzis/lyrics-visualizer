@@ -7,7 +7,7 @@ import Stage, { drawFrame } from './components/Stage.jsx';
 import ControlsBar from './components/ControlsBar.jsx';
 import Timeline from './components/Timeline.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
-import { activeCueIndexAtTime } from './lib/cueIndex.js';
+import { activeCueIndexAtTime, EPSILON as CUE_TIME_EPSILON } from './lib/cueIndex.js';
 import { createResizablePanel } from './lib/resizable.js';
 import { wordsFromText } from './lib/words.js';
 import { snapToGrid } from './lib/snap.js';
@@ -121,7 +121,41 @@ export default function Player(props) {
   }
 
   const MIN_CUE_DURATION = 0.05;
+  const NEW_CUE_DURATION = 1;
   const EDGE_EPSILON = 0.001; // tolerance for "two blocks share a border"
+
+  // Inserts a new, empty cue at the playhead — for the gaps sliceAtCursor
+  // can't reach, since that only splits an existing cue. No-op if the
+  // playhead is inside an existing cue (there's nothing to insert there;
+  // slice it instead) or if the gap at the playhead is too small to hold
+  // even a minimum-duration cue. Returns the new cue's index (for the
+  // caller to immediately open it for text editing), or -1 if it no-op'd.
+  function addCueAtCursor() {
+    const t = currentTime();
+    // Nudge forward by the same tolerance activeCueIndexAtTime uses: a seek
+    // to a cue's exact start (e.g. via the "next line" button) can read back
+    // a hair before it, which would otherwise misclassify the playhead as
+    // sitting in the gap just before that cue rather than inside it.
+    const tEff = t + CUE_TIME_EPSILON;
+    let idx = cues.findIndex((c) => c.start > tEff);
+    if (idx < 0) idx = cues.length;
+    const prev = cues[idx - 1];
+    const next = cues[idx];
+    if (prev && tEff < prev.end) return -1;
+    const lower = prev ? prev.end : 0;
+    const upper = next ? next.start : duration();
+    if (upper - lower < MIN_CUE_DURATION) return -1;
+
+    const tl = config.timeline || {};
+    const rawStart = snapEnabled() ? snapToGrid(t, tl.bpm, tl.beatsPerBar, tl.gridOffset || 0) : t;
+    const start = Math.max(lower, Math.min(upper - MIN_CUE_DURATION, rawStart));
+    const end = Math.min(upper, start + NEW_CUE_DURATION);
+
+    setCues([...cues.slice(0, idx), { start, end, text: '', words: [] }, ...cues.slice(idx)]);
+    setSelectedCueIndex(idx);
+    persistCues();
+    return idx;
+  }
 
   // Drags a cue's start or end edge to rawTime (snapped first, if enabled),
   // clamped so it can never shrink past MIN_CUE_DURATION or overlap a
@@ -309,6 +343,7 @@ export default function Player(props) {
           onToggleSnap={() => setSnapEnabled((v) => !v)}
           onEditText={setCueText}
           onSlice={sliceAtCursor}
+          onAddCue={addCueAtCursor}
           linkResize={linkResize}
           onToggleLinkResize={() => setLinkResize((v) => !v)}
           onResizeCue={resizeCueEdge}

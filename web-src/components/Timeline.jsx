@@ -620,6 +620,13 @@ export default function Timeline(props) {
     props.onBpmChange(Number.isFinite(v) && v > 0 ? v : null);
   }
 
+  // Jump straight into text-editing the newly-added cue, same as double-
+  // clicking it, since it starts out empty and useless until named.
+  function onAddCueClick() {
+    const idx = props.onAddCue();
+    if (idx != null && idx >= 0) setEditingIndex(idx);
+  }
+
   // Screen-space rect for the text-edit <input> overlaid on the block being
   // edited — tracks the same reactive inputs draw() does so it stays glued
   // to the block through pan/zoom while open.
@@ -716,6 +723,14 @@ export default function Timeline(props) {
               title="Snap to grid (cursor clicks and block resizing)"
             >
               🧲
+            </button>
+            <button
+              type="button"
+              class="transportBtn"
+              onClick={onAddCueClick}
+              title="Add a new cue block at the cursor position"
+            >
+              ➕
             </button>
             <button
               type="button"

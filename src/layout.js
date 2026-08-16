@@ -38,7 +38,7 @@ function computeLayout(ctx, cues, layoutConfig) {
       x += width + wordGap;
     });
 
-    x -= wordGap; // no trailing gap after the last word of a cue
+    if (cueWords.length > 0) x -= wordGap; // no trailing gap after the last word of a cue
     const cueEndX = x;
     outCues.push({
       cueIndex,

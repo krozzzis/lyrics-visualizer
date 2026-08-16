@@ -5,7 +5,7 @@
 // the requested time — so a strict `<=` comparison would then treat the
 // cue as not-yet-reached and get permanently stuck. This is comfortably
 // smaller than any real cue gap in practice.
-const EPSILON = 0.05;
+export const EPSILON = 0.05;
 
 // Index of the cue active at time t (last cue whose start <= t), or -1.
 // Deliberately independent of camera.js's word-splitMode keyframes: UI
