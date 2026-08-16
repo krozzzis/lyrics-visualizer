@@ -4,9 +4,20 @@ Lyric video visualizer: subtitle lines flow word-by-word along one long
 horizontal line; the camera jumps to center the current word/line on each
 subtitle timestamp. Renders live in a browser (Solid.js) or offline to a
 video file via ffmpeg — both paths share the same layout/draw code
-(`src/scene.js`, `src/layout.js`, `src/camera.js`, `src/color.js`) so the
-preview and the rendered output are pixel-identical. See `README.md` for
-user-facing setup/config docs.
+(`src/scene.js`, `src/layout.js`, `src/camera.js`, `src/color.js`,
+`src/configMarkers.js`) so the preview and the rendered output are
+pixel-identical. See `README.md` for user-facing setup/config docs.
+
+Config is not fully global: `camera`/`colors`/`style` can be locally
+overridden from a point in time onward via config markers
+(`src/configMarkers.js`, `config-markers.json` next to `config.yaml`) —
+`layout`/`font`/`output` stay global since they feed the single shared word-
+layout pass. `resolveConfigAt(config, sortedMarkers, t)` is the one place
+that resolution happens; `buildKeyframes` (src/camera.js) resolves
+`camera.anchor` per-cue, `drawFrame` (src/scene.js) resolves the rest
+per-frame. If you add a new config field that should be markerable, it must
+go through this resolver, not be read straight off `config` in a per-frame/
+per-cue code path.
 
 ## Architecture
 
@@ -17,11 +28,13 @@ user-facing setup/config docs.
   `video` (full ffmpeg render). Uses `@napi-rs/canvas` for a headless
   CanvasRenderingContext2D.
 - `bin/serve.js` — dev server: serves `web/dist`, `GET /api/data` (config +
-  cues for the browser), `POST /api/config` (persist settings-panel edits to
-  the YAML file this server was started with), `POST /api/render` +
-  `GET /api/render/status` + `GET /api/render/download` (server-side render
-  triggered from the browser, sharing `src/render.js` with the CLI's `video`
-  command).
+  cues + config markers for the browser), `POST /api/config` (persist
+  settings-panel edits to the YAML file this server was started with),
+  `POST /api/markers` (persist config-marker add/move/delete/override edits
+  to `config-markers.json`, immediately — no separate Save step, like
+  `POST /api/cues`), `POST /api/render` + `GET /api/render/status` +
+  `GET /api/render/download` (server-side render triggered from the browser,
+  sharing `src/render.js` with the CLI's `video` command).
 - `web-src/` — Solid.js browser player, built by Vite into `web/dist`
   (gitignored; `bin/serve.js` refuses to start without it).
 - Config precedence: `config.yaml` on disk is the source of truth, but the

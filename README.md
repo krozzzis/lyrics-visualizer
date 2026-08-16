@@ -91,6 +91,20 @@ gets muxed into the render), or by a manual clock otherwise.
   them into one logical line for the stacked animation mode (`Ungroup` to
   split them back out) — grouped blocks show a colored bar underneath them,
   a different color per line so adjacent groups stay visually distinct.
+- **Config markers** (`🚩` button in the timeline header) place a dot one row
+  below the cue blocks — a point where `camera`/`colors`/`style` locally
+  override the global config from there on, cumulatively, until the next
+  marker touches the same field. Drag a dot to move it, click to select it
+  and open its own panel (in the same right-hand slot as Settings), `Delete`/
+  `Backspace` or the panel's Delete button to remove it. Every field in the
+  marker panel starts unchecked (inherited from whatever's in effect just
+  before it); check a field to pin it to a specific value from that point on.
+  Only `camera`/`colors`/`style` are overridable this way — `layout`/`font`/
+  `output` stay global, since they feed the single word-layout pass shared by
+  the whole timeline. Markers live in `config-markers.json` next to
+  `config.yaml` (gitignored, auto-created) and save immediately on every
+  edit, like cue edits — no separate Save step, and both the browser preview
+  and `bin/render.js` resolve them identically.
 - **Keyboard shortcuts** work anywhere on the page except while typing in a
   text field: `Space` play/pause, `←`/`→` seek by one beat (or 5s without a
   BPM), `Home` jump to the start.
@@ -156,13 +170,15 @@ src/layout.js    cues + canvas ctx   →  word positions — one long line, or (
 src/camera.js    layout + config     →  jump keyframes, eased camera-x(t)/y(t)/scale(t)
 src/scene.js     drawFrame(ctx, ...) →  the one draw routine both runtimes call
 src/config.js    config.yaml         →  validated, path-resolved config object
+src/configMarkers.js  config + config-markers.json  →  camera/colors/style resolved at time t
 bin/render.js    Node CLI:  dump | frame | video (drives @napi-rs/canvas + ffmpeg)
-bin/serve.js     serves web/dist (built by Vite) + hands cues/config to the browser as JSON
-web-src/         SolidJS browser player (Player, Sidebar, Timeline, Stage, ControlsBar)
+bin/serve.js     serves web/dist (built by Vite) + hands cues/config/markers to the browser as JSON
+web-src/         SolidJS browser player (Player, Sidebar, Timeline, Stage, ControlsBar, MarkerPanel)
 web/dist/        Vite build output — gitignored, produced by `npm run build`
 ```
 
-`src/color.js`, `src/lines.js`, `src/layout.js`, `src/camera.js`, `src/scene.js` are plain
+`src/color.js`, `src/lines.js`, `src/layout.js`, `src/camera.js`, `src/scene.js`,
+`src/configMarkers.js` are plain
 CommonJS, `require()`d directly by `bin/render.js` **and** bundled into the
 browser build by Vite (`web-src/components/Stage.jsx` imports `src/scene.js`
 straight from outside `web-src/`) — one `drawFrame()`, two runtimes, so the

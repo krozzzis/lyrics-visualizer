@@ -110,3 +110,9 @@ timeline:
   # this against the waveform in the preview until the grid lines land on
   # the kick/snare hits.
   gridOffset: 0
+
+# Config markers — points in the timeline where camera/colors/style locally
+# override everything above from that point on — are NOT set here. They live
+# in their own gitignored, auto-created config-markers.json next to this
+# file, edited via the timeline's 🚩 button in the browser preview (see
+# README's "Preview in a browser" section), never by hand-editing YAML.
