@@ -13,6 +13,9 @@ const { alphaOf } = require('../src/color');
 const { ensureNativeSubtitle } = require('../src/convertSubtitle');
 const { wordsFromText } = require('../src/subtitles');
 const { serializeNative } = require('../src/subtitles/native');
+const {
+  loadMarkers, saveMarkers, sanitizeOverrides, backgroundNeedsAlpha,
+} = require('../src/configMarkers');
 
 const program = new Command();
 program
@@ -24,6 +27,7 @@ const opts = program.opts();
 ensureNativeSubtitle(opts.config);
 let config = loadConfig(opts.config);
 let cues = loadCues(config);
+let markers = loadMarkers(opts.config);
 
 const distDir = path.join(__dirname, '..', 'web', 'dist');
 if (!fs.existsSync(distDir)) {
@@ -49,7 +53,9 @@ app.get('/api/data', (req, res) => {
     timeline: config.timeline,
     audio: config.audio ? '/assets/audio' : null,
   };
-  res.json({ config: publicConfig, cues });
+  res.json({
+    config: publicConfig, cues, configMarkers: markers,
+  });
 });
 
 // Persists settings-panel edits back to the config file this server was
@@ -137,6 +143,35 @@ app.post('/api/cues', (req, res) => {
   }
 });
 
+// Persists config-marker edits (add/move/delete/override changes from the
+// timeline) to config-markers.json, right away — like /api/cues, and unlike
+// /api/config's explicit-Save flow, since markers are timeline objects the
+// user manipulates directly rather than a batch of settings-panel tweaks.
+// Every marker's `overrides` is sanitized to the same whitelist drawFrame
+// actually resolves (camera/colors/style) so a stray field can't silently
+// pretend to work.
+app.post('/api/markers', (req, res) => {
+  try {
+    const incoming = (req.body || {}).markers;
+    if (!Array.isArray(incoming)) {
+      return res.status(400).json({ ok: false, error: 'Expected { markers: [...] }' });
+    }
+
+    const newMarkers = incoming.map((m) => {
+      if (typeof m.id !== 'string' || typeof m.time !== 'number' || !Number.isFinite(m.time)) {
+        throw new Error('Each marker needs a string id and numeric time');
+      }
+      return { id: m.id, time: Math.max(0, m.time), overrides: sanitizeOverrides(m.overrides) };
+    }).sort((a, b) => a.time - b.time);
+
+    saveMarkers(opts.config, newMarkers);
+    markers = newMarkers;
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // Full video render, run in-process and downloaded when done. Only one job
 // at a time — this is a single-user local dev tool, not a render farm.
 //
@@ -167,7 +202,7 @@ app.post('/api/render', (req, res) => {
     // change the same way a stale in-memory config would.
     const renderCues = loadCues(renderConfig);
 
-    const ext = alphaOf(renderConfig.colors.background) < 1 ? '.mov' : '.mp4';
+    const ext = backgroundNeedsAlpha(renderConfig, markers, alphaOf) ? '.mov' : '.mp4';
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     fs.mkdirSync(rendersDir, { recursive: true });
     const outPath = path.join(rendersDir, `lyrics-${stamp}${ext}`);
@@ -181,6 +216,7 @@ app.post('/api/render', (req, res) => {
     };
 
     renderVideo(renderConfig, renderCues, outPath, {
+      markers,
       onProgress: ({
         frame, frameCount, t, duration,
       }) => {

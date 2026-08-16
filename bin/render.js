@@ -10,15 +10,18 @@ const { prepareScene, drawFrame } = require('../src/scene');
 const { registerConfigFont } = require('../src/node-font');
 const { renderVideo } = require('../src/render');
 const { ensureNativeSubtitle } = require('../src/convertSubtitle');
+const { loadMarkers } = require('../src/configMarkers');
 
-function buildScene(config) {
+function buildScene(config, markers) {
   registerConfigFont(config);
   const cues = loadCues(config);
 
   const canvas = createCanvas(config.output.width, config.output.height);
   const ctx = canvas.getContext('2d');
-  const scene = prepareScene(ctx, cues, config);
-  return { canvas, ctx, scene, cues };
+  const scene = prepareScene(ctx, cues, config, markers);
+  return {
+    canvas, ctx, scene, cues,
+  };
 }
 
 async function cmdDump(opts) {
@@ -31,7 +34,8 @@ async function cmdDump(opts) {
 async function cmdFrame(opts) {
   ensureNativeSubtitle(opts.config);
   const config = loadConfig(opts.config);
-  const { canvas, ctx, scene } = buildScene(config);
+  const markers = loadMarkers(opts.config);
+  const { canvas, ctx, scene } = buildScene(config, markers);
   drawFrame(ctx, config.output, config, scene, parseFloat(opts.time));
   fs.writeFileSync(opts.out, canvas.toBuffer('image/png'));
   console.log(`Wrote ${opts.out}`);
@@ -41,12 +45,14 @@ async function cmdVideo(opts) {
   ensureNativeSubtitle(opts.config);
   const config = loadConfig(opts.config);
   const cues = loadCues(config);
+  const markers = loadMarkers(opts.config);
   const start = parseFloat(opts.start);
   const explicitDuration = opts.duration ? parseFloat(opts.duration) : undefined;
 
   await renderVideo(config, cues, opts.out, {
     start,
     duration: explicitDuration,
+    markers,
     onProgress: ({ frame, t, duration }) => {
       if ((frame - 1) % config.output.fps === 0) {
         process.stderr.write(`\rrendering ${t.toFixed(1)}s / ${duration.toFixed(1)}s`);

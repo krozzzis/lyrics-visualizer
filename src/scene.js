@@ -3,14 +3,18 @@ const {
   buildKeyframes, cameraXAtTime, cameraYAtTime, cameraScaleAtTime, activeIndexAtTime,
 } = require('./camera');
 const { toCanvasFill } = require('./color');
+const { sortMarkers, resolveConfigAt } = require('./configMarkers');
 
-// Precomputes everything that doesn't depend on the playback time t:
-// layout positions and camera keyframes. Call once per (config, cues, ctx).
-function prepareScene(ctx, cues, config) {
+// Precomputes everything that doesn't depend on the playback time t: layout
+// positions, camera keyframes, and the time-sorted marker list drawFrame
+// resolves local config (camera/colors/style) against. Call once per
+// (config, cues, markers, ctx).
+function prepareScene(ctx, cues, config, markers = []) {
   ctx.font = fontString(config.font);
   const layout = computeLayout(ctx, cues, config.layout, config.font);
-  const keyframes = buildKeyframes(layout.cues, config);
-  return { layout, keyframes };
+  const sortedMarkers = sortMarkers(markers);
+  const keyframes = buildKeyframes(layout.cues, config, sortedMarkers);
+  return { layout, keyframes, markers: sortedMarkers };
 }
 
 // Pure per-frame draw: only reads from ctx, config and the precomputed
@@ -18,19 +22,30 @@ function prepareScene(ctx, cues, config) {
 // frame-stepping loop, since both talk to the same CanvasRenderingContext2D
 // surface (native Canvas2D in-browser, @napi-rs/canvas in Node).
 function drawFrame(ctx, { width, height }, config, scene, t) {
-  const { layout, keyframes } = scene;
+  const { layout, keyframes, markers = [] } = scene;
 
-  const bgFill = toCanvasFill(config.colors.background);
+  // colors/style are resolved live at t (they don't affect the jump
+  // animation, so there's no "mid-jump" case to worry about). camera is
+  // resolved at the active jump's own start time instead of raw t, so a
+  // marker landing inside an in-flight jump (config.camera.jumpDuration
+  // window) can't change jumpDuration/easing/etc. mid-animation.
+  const activeKeyframeIdx = activeIndexAtTime(keyframes, t);
+  const cameraResolveTime = activeKeyframeIdx === -1 ? t : keyframes[activeKeyframeIdx].time;
+  const resolvedNow = resolveConfigAt(config, markers, t);
+  const resolvedCamera = (activeKeyframeIdx === -1
+    ? resolvedNow
+    : resolveConfigAt(config, markers, cameraResolveTime)).camera;
+
+  const bgFill = toCanvasFill(resolvedNow.colors.background);
   ctx.clearRect(0, 0, width, height);
   if (bgFill) {
     ctx.fillStyle = bgFill;
     ctx.fillRect(0, 0, width, height);
   }
 
-  const cameraX = cameraXAtTime(keyframes, t, config.camera);
-  const cameraY = cameraYAtTime(keyframes, t, config.camera);
-  const cameraScale = cameraScaleAtTime(keyframes, t, config.camera);
-  const activeKeyframeIdx = activeIndexAtTime(keyframes, t);
+  const cameraX = cameraXAtTime(keyframes, t, resolvedCamera);
+  const cameraY = cameraYAtTime(keyframes, t, resolvedCamera);
+  const cameraScale = cameraScaleAtTime(keyframes, t, resolvedCamera);
   const activeCueIndex = activeKeyframeIdx === -1 ? -1 : keyframes[activeKeyframeIdx].cueIndex;
   const activeLineIndex = activeCueIndex !== -1 && layout.cues[activeCueIndex]
     ? layout.cues[activeCueIndex].lineIndex
@@ -40,12 +55,12 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
 
-  const textFill = toCanvasFill(config.colors.text) || 'rgba(0,0,0,1)';
-  const inactiveOpacity = config.style && config.style.inactiveOpacity != null
-    ? config.style.inactiveOpacity
+  const textFill = toCanvasFill(resolvedNow.colors.text) || 'rgba(0,0,0,1)';
+  const inactiveOpacity = resolvedNow.style && resolvedNow.style.inactiveOpacity != null
+    ? resolvedNow.style.inactiveOpacity
     : 0.35;
-  const activeOpacity = config.style && config.style.activeOpacity != null
-    ? config.style.activeOpacity
+  const activeOpacity = resolvedNow.style && resolvedNow.style.activeOpacity != null
+    ? resolvedNow.style.activeOpacity
     : 1;
   // Stacked mode only — in flow mode every word's lineIndex is 0, so these
   // never exclude anything (rowDelta is always 0, within [-1, 1] regardless).

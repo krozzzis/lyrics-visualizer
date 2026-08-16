@@ -5,6 +5,7 @@ const { createCanvas } = require('@napi-rs/canvas');
 const { prepareScene, drawFrame } = require('./scene');
 const { registerConfigFont } = require('./node-font');
 const { alphaOf } = require('./color');
+const { backgroundNeedsAlpha } = require('./configMarkers');
 
 // Shared by the CLI renderer (bin/render.js) and the dev server's /api/render
 // so both produce byte-identical output from the same drawFrame() call the
@@ -38,9 +39,12 @@ async function resolveDuration(config, cues, explicitDuration) {
   return lastEnd + 2;
 }
 
-function buildFfmpegArgs(config, outPath, fps) {
-  const bgAlpha = alphaOf(config.colors.background);
-  const wantsAlpha = bgAlpha < 1;
+function buildFfmpegArgs(config, markers, outPath, fps) {
+  // Checked across the base config *and* every marker's colors.background
+  // override, not just the base: a marker can make the background
+  // translucent partway through, and the container/codec has to be able to
+  // carry that from the first frame — it can't change mid-file.
+  const wantsAlpha = backgroundNeedsAlpha(config, markers, alphaOf);
   const ext = path.extname(outPath).toLowerCase();
 
   // .webm (VP9) alpha is deliberately not offered: it round-trips through
@@ -76,18 +80,20 @@ function buildFfmpegArgs(config, outPath, fps) {
 // Resolves once ffmpeg has fully written the file; rejects (without hanging)
 // if ffmpeg/ffprobe can't be spawned or exits non-zero.
 async function renderVideo(config, cues, outPath, opts = {}) {
-  const { start = 0, duration: explicitDuration, onProgress } = opts;
+  const {
+    start = 0, duration: explicitDuration, onProgress, markers = [],
+  } = opts;
 
   registerConfigFont(config);
   const canvas = createCanvas(config.output.width, config.output.height);
   const ctx = canvas.getContext('2d');
-  const scene = prepareScene(ctx, cues, config);
+  const scene = prepareScene(ctx, cues, config, markers);
 
   const fps = config.output.fps;
   const duration = await resolveDuration(config, cues, explicitDuration);
   const frameCount = Math.max(0, Math.ceil((duration - start) * fps));
 
-  const ffArgs = buildFfmpegArgs(config, outPath, fps);
+  const ffArgs = buildFfmpegArgs(config, markers, outPath, fps);
   const ff = spawn('ffmpeg', ffArgs, { stdio: ['pipe', 'inherit', 'inherit'] });
   // A dead stdin (process never spawned, or died mid-render) otherwise
   // raises an unhandled EPIPE 'error' on the stream and crashes the server;

@@ -12,6 +12,7 @@ renders/
 data/
 config.yaml
 config.local.yaml
+config-markers.json
 
 # Editor/OS/tooling cruft
 .DS_Store

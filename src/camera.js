@@ -1,3 +1,5 @@
+const { resolveConfigAt } = require('./configMarkers');
+
 // Builds camera jump keyframes from laid-out cues, and interpolates the
 // camera's X position and zoom scale at an arbitrary time with an
 // easing/overshoot curve.
@@ -7,9 +9,12 @@
 // per-word timing exists (ASS karaoke tags) or the user explicitly opts into
 // synthesized char-weighted timing via config.word.splitMode.
 
-function buildKeyframes(layoutCues, config) {
+// sortedMarkers (time-sorted, see configMarkers.sortMarkers) lets
+// camera.anchor change partway through the timeline: each cue resolves its
+// own anchor at its start time, so cues before a marker keep the old anchor
+// and cues from the marker onward pick up the new one.
+function buildKeyframes(layoutCues, config, sortedMarkers = []) {
   const mode = (config.word && config.word.splitMode) || 'line';
-  const anchor = (config.camera && config.camera.anchor) || 'center';
   const keyframes = [];
 
   for (const cue of layoutCues) {
@@ -24,6 +29,8 @@ function buildKeyframes(layoutCues, config) {
         });
       }
     } else {
+      const resolvedCamera = resolveConfigAt(config, sortedMarkers, cue.start).camera || {};
+      const anchor = resolvedCamera.anchor || 'center';
       const first = cue.words[0];
       const anchorX = anchor === 'start'
         ? (first ? first.x + first.width / 2 : cue.startX)
