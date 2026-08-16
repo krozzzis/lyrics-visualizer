@@ -1,4 +1,5 @@
 import RenderControls from './RenderControls.jsx';
+import Icon from './Icon.jsx';
 
 export default function ControlsBar(props) {
   return (
@@ -12,6 +13,7 @@ export default function ControlsBar(props) {
         onClick={props.onToggleSettings}
         title="Toggle settings panel"
       >
+        <Icon name="settings" />
         Settings
       </button>
     </div>

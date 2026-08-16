@@ -21,6 +21,22 @@
   box-sizing: border-box;
 }
 
+/* ---------- Icons (Material Symbols, inlined via Icon.jsx) ---------- */
+
+.mdIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.mdIcon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  display: block;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -242,7 +258,7 @@ button {
   transform: scale(0.94);
 }
 
-.playBtn svg {
+.playBtn .mdIcon {
   width: 14px;
   height: 14px;
 }
@@ -282,6 +298,9 @@ button {
 }
 
 .smallBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--panel-alt);
   border: 1px solid var(--border);
   color: var(--text-dim);
@@ -289,6 +308,11 @@ button {
   padding: 5px 10px;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
+}
+
+.smallBtn .mdIcon {
+  width: 15px;
+  height: 15px;
 }
 
 .smallBtn:hover {
@@ -448,10 +472,21 @@ button {
   color: #fff;
 }
 
+.transportBtn .mdIcon {
+  width: 17px;
+  height: 17px;
+}
+
 .transportBtn.textBtn {
   width: auto;
   padding: 0 10px;
+  gap: 5px;
   font-size: 12px;
+}
+
+.transportBtn.textBtn .mdIcon {
+  width: 15px;
+  height: 15px;
 }
 
 .transportBtn:disabled {
@@ -560,6 +595,18 @@ button {
   color: var(--text);
 }
 
+.zoomControls button .mdIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.zoomControls .fitBtn {
+  width: auto;
+  padding: 0 8px;
+  gap: 4px;
+  font-size: 12px;
+}
+
 #timelineBody {
   flex: 1;
   min-height: 0;
@@ -664,6 +711,11 @@ button {
 .muteBtn:hover {
   background: var(--border);
   color: var(--text);
+}
+
+.muteBtn .mdIcon {
+  width: 14px;
+  height: 14px;
 }
 
 .muteBtn.active {

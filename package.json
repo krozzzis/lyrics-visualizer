@@ -16,6 +16,7 @@
     "electron": "electron ."
   },
   "dependencies": {
+    "@material-symbols/svg-400": "^0.46.0",
     "@napi-rs/canvas": "^0.1.53",
     "commander": "^12.1.0",
     "express": "^4.21.1",

@@ -2,6 +2,7 @@ import {
   createSignal, onCleanup, onMount, Show,
 } from 'solid-js';
 import { buildEditablePayload } from '../lib/editableConfig.js';
+import Icon from './Icon.jsx';
 
 const POLL_MS = 400;
 
@@ -81,11 +82,12 @@ export default function RenderControls(props) {
         onClick={startRender}
         title="Render the full video server-side, using what's on screen (saved or not)"
       >
+        <Icon name="movie" />
         {status() === 'running' ? `Rendering… ${pct()}%` : 'Render video'}
       </button>
       <Show when={status() === 'done'}>
         <span class="renderSavedPath" title={outPath()}>Saved to {outPath()}</span>
-        <a class="smallBtn renderDownload" href={url()} download>Download</a>
+        <a class="smallBtn renderDownload" href={url()} download><Icon name="download" />Download</a>
       </Show>
       <Show when={status() === 'error'}>
         <span class="renderError" title={error()}>Render failed: {error()}</span>

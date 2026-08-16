@@ -1,5 +1,6 @@
 import { createMemo, Show } from 'solid-js';
 import { resolveConfigAt, sortMarkers } from '../../src/configMarkers.js';
+import Icon from './Icon.jsx';
 
 // Edits one config marker's local overrides — the "non-global" half of the
 // settings system (see src/configMarkers.js): unlike SettingsPanel, every
@@ -78,7 +79,7 @@ export default function MarkerPanel(props) {
     <aside id="settingsPanel" style={{ width: `${props.width()}px` }}>
       <div id="settingsHeader">
         <span>Marker</span>
-        <button type="button" class="smallBtn" onClick={props.onDelete}>Delete</button>
+        <button type="button" class="smallBtn" onClick={props.onDelete}><Icon name="delete" />Delete</button>
       </div>
 
       <div id="settingsBody">
@@ -271,7 +272,7 @@ export default function MarkerPanel(props) {
         </p>
       </div>
 
-      <button type="button" class="smallBtn closeMarkerPanel" onClick={props.onClose}>Close</button>
+      <button type="button" class="smallBtn closeMarkerPanel" onClick={props.onClose}><Icon name="close" />Close</button>
     </aside>
   );
 }

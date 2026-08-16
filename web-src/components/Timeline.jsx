@@ -7,6 +7,7 @@ import { beatsInRange, barDuration } from '../lib/beatGrid.js';
 import { snapToGrid } from '../lib/snap.js';
 import { formatClock } from '../lib/format.js';
 import PlayPauseButton from './PlayPauseButton.jsx';
+import Icon from './Icon.jsx';
 
 const COLORS = {
   waveformPlayed: '#9781ff',
@@ -854,7 +855,7 @@ export default function Timeline(props) {
               onClick={props.onToggleSnap}
               title="Snap to grid (cursor clicks and block resizing)"
             >
-              🧲
+              <Icon name="grid_guides" />
             </button>
             <button
               type="button"
@@ -862,7 +863,7 @@ export default function Timeline(props) {
               onClick={onAddCueClick}
               title="Add a new cue block at the cursor position"
             >
-              ➕
+              <Icon name="add" />
             </button>
             <button
               type="button"
@@ -870,7 +871,7 @@ export default function Timeline(props) {
               onClick={props.onAddMarker}
               title="Add a config marker at the cursor position — a point where camera/colors/style settings can locally override the global config"
             >
-              🚩
+              <Icon name="flag" />
             </button>
             <button
               type="button"
@@ -878,7 +879,7 @@ export default function Timeline(props) {
               onClick={props.onSlice}
               title="Slice the block under the cursor in two (S)"
             >
-              ✂
+              <Icon name="content_cut" />
             </button>
             <button
               type="button"
@@ -887,7 +888,7 @@ export default function Timeline(props) {
               onClick={props.onToggleLinkResize}
               title="Linked resize: dragging a shared border resizes both blocks"
             >
-              🔗
+              <Icon name="link" />
             </button>
             <button
               type="button"
@@ -896,6 +897,7 @@ export default function Timeline(props) {
               onClick={props.onGroup}
               title="Group the selected blocks into one logical line"
             >
+              <Icon name="group" />
               Group
             </button>
             <button
@@ -905,25 +907,26 @@ export default function Timeline(props) {
               onClick={props.onUngroup}
               title="Remove the selected blocks from their logical line"
             >
+              <Icon name="ungroup" />
               Ungroup
             </button>
           </div>
         </div>
         <div class="transportControls">
-          <button type="button" class="transportBtn" onClick={seekPrevCue} title="Previous line">⏮</button>
-          <button type="button" class="transportBtn" onClick={() => skipBy(-skipStep())} title="Skip back">◀◀</button>
+          <button type="button" class="transportBtn" onClick={seekPrevCue} title="Previous line"><Icon name="skip_previous" /></button>
+          <button type="button" class="transportBtn" onClick={() => skipBy(-skipStep())} title="Skip back"><Icon name="fast_rewind" /></button>
           <PlayPauseButton playing={props.playing} onToggle={props.onToggle} />
-          <button type="button" class="transportBtn" onClick={() => skipBy(skipStep())} title="Skip forward">▶▶</button>
-          <button type="button" class="transportBtn" onClick={seekNextCue} title="Next line">⏭</button>
+          <button type="button" class="transportBtn" onClick={() => skipBy(skipStep())} title="Skip forward"><Icon name="fast_forward" /></button>
+          <button type="button" class="transportBtn" onClick={seekNextCue} title="Next line"><Icon name="skip_next" /></button>
           <span class="timeDisplay">
             {formatClock(props.currentTime())} / {formatClock(props.duration())}
           </span>
         </div>
         <div class="headerRight">
           <div class="zoomControls">
-            <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out">−</button>
-            <button type="button" onClick={fitToWidth} title="Fit whole track">Fit</button>
-            <button type="button" onClick={() => zoomBy(1.4)} title="Zoom in">+</button>
+            <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out"><Icon name="remove" /></button>
+            <button type="button" class="fitBtn" onClick={fitToWidth} title="Fit whole track"><Icon name="fit_screen" />Fit</button>
+            <button type="button" onClick={() => zoomBy(1.4)} title="Zoom in"><Icon name="add" /></button>
           </div>
         </div>
       </div>
@@ -951,7 +954,7 @@ export default function Timeline(props) {
               onClick={props.onToggleMute}
               title={props.muted() ? 'Unmute' : 'Mute'}
             >
-              M
+              <Icon name={props.muted() ? 'volume_off' : 'volume_up'} />
             </button>
           </div>
         </Show>
