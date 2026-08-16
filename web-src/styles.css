@@ -441,6 +441,22 @@ button {
   color: #fff;
 }
 
+.transportBtn.textBtn {
+  width: auto;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.transportBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.transportBtn:disabled:hover {
+  background: var(--panel-alt);
+  color: var(--text-dim);
+}
+
 .bpmControl {
   display: flex;
   align-items: center;

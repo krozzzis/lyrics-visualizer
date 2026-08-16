@@ -66,7 +66,9 @@ export default function Player(props) {
   async function persistCues() {
     try {
       const body = JSON.stringify({
-        cues: cues.map((c) => ({ start: c.start, end: c.end, text: c.text })),
+        cues: cues.map((c) => ({
+          start: c.start, end: c.end, text: c.text, lineId: c.lineId,
+        })),
       });
       const res = await fetch('/api/cues', {
         method: 'POST',
@@ -106,8 +108,12 @@ export default function Player(props) {
 
     setCues([
       ...cues.slice(0, idx),
-      { start: cue.start, end: t, text: firstWords.map((w) => w.text).join(' '), words: firstWords },
-      { start: t, end: cue.end, text: secondWords.map((w) => w.text).join(' '), words: secondWords },
+      {
+        start: cue.start, end: t, text: firstWords.map((w) => w.text).join(' '), words: firstWords, lineId: cue.lineId,
+      },
+      {
+        start: t, end: cue.end, text: secondWords.map((w) => w.text).join(' '), words: secondWords, lineId: cue.lineId,
+      },
       ...cues.slice(idx + 1),
     ]);
     clearSelection(); // indices past idx have shifted
@@ -149,6 +155,29 @@ export default function Player(props) {
     if (sel.size === 0) return;
     setCues(cues.filter((_, i) => !sel.has(i)));
     clearSelection();
+    persistCues();
+  }
+
+  let lineIdCounter = 0;
+
+  // Groups every selected cue into one logical line (two-level subtitle
+  // system: cue blocks are fragments, lines are what actually flows on
+  // screen in the stacked-line layout). Re-grouping a cue that already
+  // belongs to another line just moves it to this one. No-op under two
+  // cues, since a "line" of one is just an ungrouped cue.
+  function groupSelected() {
+    const sel = selectedIndices();
+    if (sel.size < 2) return;
+    lineIdCounter += 1;
+    const lineId = `line-${Date.now()}-${lineIdCounter}`;
+    for (const i of sel) setCues(i, 'lineId', lineId);
+    persistCues();
+  }
+
+  function ungroupSelected() {
+    const sel = selectedIndices();
+    if (sel.size === 0) return;
+    for (const i of sel) setCues(i, 'lineId', undefined);
     persistCues();
   }
 
@@ -377,6 +406,8 @@ export default function Player(props) {
           onEditText={setCueText}
           onSlice={sliceAtCursor}
           onAddCue={addCueAtCursor}
+          onGroup={groupSelected}
+          onUngroup={ungroupSelected}
           linkResize={linkResize}
           onToggleLinkResize={() => setLinkResize((v) => !v)}
           onResizeCue={resizeCueEdge}

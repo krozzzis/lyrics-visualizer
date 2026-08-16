@@ -118,9 +118,15 @@ app.post('/api/cues', (req, res) => {
       if (typeof c.start !== 'number' || typeof c.end !== 'number' || typeof c.text !== 'string') {
         throw new Error('Each cue needs numeric start/end and string text');
       }
-      return {
+      const cue = {
         start: c.start, end: c.end, text: c.text, words: wordsFromText(c.text),
       };
+      // Logical-line grouping (see web-src/Player.jsx groupSelected/ungroupSelected):
+      // an id shared by cues that are fragments of the same subtitle line.
+      // Omitted entirely for ungrouped cues, rather than null, to keep the
+      // native JSON minimal for the common case.
+      if (c.lineId) cue.lineId = c.lineId;
+      return cue;
     }).sort((a, b) => a.start - b.start);
 
     fs.writeFileSync(config.subtitle, serializeNative(newCues), 'utf8');

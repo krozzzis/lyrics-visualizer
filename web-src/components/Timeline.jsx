@@ -1,6 +1,7 @@
 import {
   createSignal, createMemo, createEffect, onMount, onCleanup, Show, For,
 } from 'solid-js';
+import * as linesMod from '../../src/lines.js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
 import { beatsInRange, barDuration } from '../lib/beatGrid.js';
 import { snapToGrid } from '../lib/snap.js';
@@ -26,6 +27,11 @@ const COLORS = {
   rulerText: '#8b8fa0',
   rulerBarText: '#b9aeff',
 };
+
+// Cycled by each logical line's time-sorted position among grouped lines
+// (see src/lines.js), so adjacent groups never share a color even when
+// their blocks sit flush against each other.
+const GROUP_LINE_COLORS = ['#4dd0e1', '#81c784', '#ffb74d', '#f06292', '#9575cd', '#aed581'];
 
 const RULER_H = 30;
 const WAVE_FRACTION = 0.58; // portion of the non-ruler height given to the waveform
@@ -401,14 +407,18 @@ export default function Timeline(props) {
   // Cue block row geometry — shared between draw() and hit-testing (used by
   // double-click-to-edit and the text-edit input overlay), so they can never
   // silently drift apart.
+  const GROUP_LINE_H = 4;
+  const GROUP_LINE_GAP = 4; // space between the bottom of a block and its group line
+
   function blockGeometry() {
     const { height } = containerSize();
     const contentH = height - RULER_H;
     const waveH = contentH * WAVE_FRACTION;
     const blockY = RULER_H + waveH + 6;
-    const blockH = height - blockY - 6;
+    const blockH = height - blockY - 6 - GROUP_LINE_GAP - GROUP_LINE_H;
+    const groupLineY = blockY + blockH + GROUP_LINE_GAP;
     return {
-      waveH, blockY, blockH,
+      waveH, blockY, blockH, groupLineY,
     };
   }
 
@@ -454,7 +464,9 @@ export default function Timeline(props) {
     const beatsPerBar = tl.beatsPerBar || 4;
     const gridOffset = tl.gridOffset || 0;
 
-    const { waveH, blockY, blockH } = blockGeometry();
+    const {
+      waveH, blockY, blockH, groupLineY,
+    } = blockGeometry();
 
     // Beat grid (drawn first, under everything else in the content area)
     const beats = beatsInRange(bpm, beatsPerBar, gridOffset, start, end);
@@ -534,6 +546,25 @@ export default function Timeline(props) {
       }
     });
 
+    // Logical-line connector: a colored bar under every cue block that
+    // belongs to the same grouped line, spanning from the first block's
+    // start to the last block's end. Ungrouped (solo) lines draw nothing —
+    // there's nothing to visually connect.
+    const groupLines = linesMod.computeLines(props.cues).filter((l) => l.cueIndices.length > 1);
+    groupLines.forEach((line, ordinal) => {
+      const firstCue = props.cues[line.cueIndices[0]];
+      const lastCue = props.cues[line.cueIndices[line.cueIndices.length - 1]];
+      if (lastCue.end < start || firstCue.start > end) return;
+      const lx1 = (firstCue.start - start) * px;
+      const lx2 = (lastCue.end - start) * px;
+      ctx.strokeStyle = GROUP_LINE_COLORS[ordinal % GROUP_LINE_COLORS.length];
+      ctx.lineWidth = GROUP_LINE_H;
+      ctx.beginPath();
+      ctx.moveTo(lx1, groupLineY);
+      ctx.lineTo(lx2, groupLineY);
+      ctx.stroke();
+    });
+
     // Ruler: bar numbers when BPM is set (DAW convention — the grid is the
     // primary reference once there's tempo info), otherwise plain timecodes.
     ctx.fillStyle = COLORS.rulerBg;
@@ -611,7 +642,9 @@ export default function Timeline(props) {
     scrollOffset();
     peakData();
     hoverEdge();
-    props.cues.forEach((cue) => { void cue.start; void cue.end; void cue.text; });
+    props.cues.forEach((cue) => {
+      void cue.start; void cue.end; void cue.text; void cue.lineId;
+    });
     draw();
   });
 
@@ -626,6 +659,14 @@ export default function Timeline(props) {
     const idx = props.onAddCue();
     if (idx != null && idx >= 0) setEditingIndex(idx);
   }
+
+  const canGroup = createMemo(() => props.selectedIndices().size >= 2);
+  const canUngroup = createMemo(() => {
+    for (const i of props.selectedIndices()) {
+      if (props.cues[i] && props.cues[i].lineId) return true;
+    }
+    return false;
+  });
 
   // Screen-space rect for the text-edit <input> overlaid on the block being
   // edited — tracks the same reactive inputs draw() does so it stays glued
@@ -748,6 +789,24 @@ export default function Timeline(props) {
               title="Linked resize: dragging a shared border resizes both blocks"
             >
               🔗
+            </button>
+            <button
+              type="button"
+              class="transportBtn textBtn"
+              disabled={!canGroup()}
+              onClick={props.onGroup}
+              title="Group the selected blocks into one logical line"
+            >
+              Group
+            </button>
+            <button
+              type="button"
+              class="transportBtn textBtn"
+              disabled={!canUngroup()}
+              onClick={props.onUngroup}
+              title="Remove the selected blocks from their logical line"
+            >
+              Ungroup
             </button>
           </div>
         </div>
