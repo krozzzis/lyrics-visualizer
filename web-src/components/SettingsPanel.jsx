@@ -187,6 +187,35 @@ export default function SettingsPanel(props) {
             <input type="number" step="1" value={config.layout.cueGap}
               onInput={(e) => setConfig('layout', 'cueGap', toNumber(e.currentTarget.value, config.layout.cueGap))} />
           </Row>
+          <Row label="Mode">
+            <select value={config.layout.mode ?? 'flow'} onChange={(e) => setConfig('layout', 'mode', e.currentTarget.value)}>
+              <option value="flow">flow (one long line)</option>
+              <option value="stacked">stacked (logical lines)</option>
+            </select>
+          </Row>
+          {config.layout.mode === 'stacked' && (
+            <>
+              <Row label="Row height (× font size)">
+                <input type="number" step="0.1" min="0.5" value={config.layout.lineHeight}
+                  onInput={(e) => setConfig('layout', 'lineHeight', toNumber(e.currentTarget.value, config.layout.lineHeight))} />
+              </Row>
+              <Row label="Show previous line">
+                <input type="checkbox" checked={config.layout.showPrevLine}
+                  onChange={(e) => setConfig('layout', 'showPrevLine', e.currentTarget.checked)} />
+              </Row>
+              <Row label="Show next line">
+                <input type="checkbox" checked={config.layout.showNextLine}
+                  onChange={(e) => setConfig('layout', 'showNextLine', e.currentTarget.checked)} />
+              </Row>
+              <Row label="Next line starts from">
+                <select value={config.layout.nextLineFrom ?? 'start'}
+                  onChange={(e) => setConfig('layout', 'nextLineFrom', e.currentTarget.value)}>
+                  <option value="start">start (shared left edge)</option>
+                  <option value="end">end (continues under current line)</option>
+                </select>
+              </Row>
+            </>
+          )}
         </Section>
 
         <Section title="Line opacity">
