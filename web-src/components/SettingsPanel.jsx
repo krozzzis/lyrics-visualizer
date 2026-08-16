@@ -205,9 +205,14 @@ export default function SettingsPanel(props) {
             <input type="number" step="1" min="1" value={config.timeline.bpm ?? ''} placeholder="—"
               onInput={(e) => setConfig('timeline', 'bpm', toNullableNumber(e.currentTarget.value))} />
           </Row>
-          <Row label="Beats per bar">
-            <input type="number" step="1" min="1" value={config.timeline.beatsPerBar}
-              onInput={(e) => setConfig('timeline', 'beatsPerBar', toNumber(e.currentTarget.value, config.timeline.beatsPerBar))} />
+          <Row label="Grid resolution">
+            <select value={config.timeline.beatsPerBar}
+              onChange={(e) => setConfig('timeline', 'beatsPerBar', toNumber(e.currentTarget.value, config.timeline.beatsPerBar))}>
+              <option value="4">1/4</option>
+              <option value="8">1/8</option>
+              <option value="16">1/16</option>
+              <option value="32">1/32</option>
+            </select>
           </Row>
           <Row label="Grid offset (s)">
             <input type="number" step="0.01" value={config.timeline.gridOffset}

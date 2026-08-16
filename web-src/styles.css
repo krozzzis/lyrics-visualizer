@@ -454,6 +454,41 @@ button {
   gap: 4px;
 }
 
+.barSizeControl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.barSizeBtn {
+  height: 32px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.barSizeBtn:active {
+  transform: scale(0.94);
+}
+
+.barSizeBtn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.barSizeBtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .bpmControl input[type="number"] {
   width: 4.5em;
   background: var(--panel-alt);

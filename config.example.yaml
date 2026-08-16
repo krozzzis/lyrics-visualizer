@@ -87,6 +87,9 @@ timeline:
   # hides the grid entirely (the waveform and cue-block track still show).
   # You can also set/override this live from the timeline header in the browser.
   # bpm: 120
+  # A bar is always a whole note (4 quarter-note beats). beatsPerBar picks the
+  # grid/snap resolution as ticks per bar — 4/8/16/32, i.e. 1/4, 1/8, 1/16,
+  # 1/32 notes — and never changes where bar lines fall or the bar count.
   beatsPerBar: 4
   # Time (seconds) of the first downbeat/bar line — not just any beat. Tune
   # this against the waveform in the preview until the grid lines land on

@@ -124,7 +124,7 @@ export default function Player(props) {
   // (see commitCueResize) so a drag doesn't flood the server with saves.
   function resizeCueEdge(index, edge, rawTime) {
     const tl = config.timeline || {};
-    const t = snapEnabled() ? snapToGrid(rawTime, tl.bpm, tl.gridOffset || 0) : rawTime;
+    const t = snapEnabled() ? snapToGrid(rawTime, tl.bpm, tl.beatsPerBar, tl.gridOffset || 0) : rawTime;
     const cue = cues[index];
 
     if (edge === 'end') {
@@ -266,6 +266,7 @@ export default function Player(props) {
           onToggle={() => (playing() ? pause() : play())}
           bpm={() => config.timeline.bpm}
           onBpmChange={(v) => setConfig('timeline', 'bpm', v)}
+          onBeatsPerBarChange={(v) => setConfig('timeline', 'beatsPerBar', v)}
           onSeek={seekTo}
           usingAudio={usingAudio}
           volume={volume}

@@ -1,8 +1,8 @@
 import {
-  createSignal, createMemo, createEffect, onMount, onCleanup, Show,
+  createSignal, createMemo, createEffect, onMount, onCleanup, Show, For,
 } from 'solid-js';
 import { decodeAudio, computePeaks, peakAt } from '../lib/waveform.js';
-import { beatsInRange } from '../lib/beatGrid.js';
+import { beatsInRange, barDuration } from '../lib/beatGrid.js';
 import { snapToGrid } from '../lib/snap.js';
 import { formatClock } from '../lib/format.js';
 import PlayPauseButton from './PlayPauseButton.jsx';
@@ -37,6 +37,7 @@ const MIN_THUMB_PX = 24;
 
 const TIME_STEPS = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800];
 const BAR_STEPS = [1, 2, 4, 8, 16, 32, 64, 128, 256];
+const BAR_SIZES = [4, 8, 16, 32]; // note values 1/4, 1/8, 1/16, 1/32 — grid ticks per bar
 
 function pickStep(candidates, valuePx, minPx) {
   for (const c of candidates) {
@@ -195,7 +196,7 @@ export default function Timeline(props) {
         const x = e.clientX - rect.left;
         const t = scrollOffset() + x / pxPerSecond();
         const tl = props.config.timeline || {};
-        props.onSeek(props.snapEnabled() ? snapToGrid(t, props.bpm(), tl.gridOffset || 0) : t);
+        props.onSeek(props.snapEnabled() ? snapToGrid(t, props.bpm(), tl.beatsPerBar, tl.gridOffset || 0) : t);
       } else {
         markInteracting();
       }
@@ -469,12 +470,12 @@ export default function Timeline(props) {
     ctx.lineWidth = 1;
 
     if (bpm > 0) {
-      const barDuration = (60 / bpm) * beatsPerBar;
-      const barStride = pickStep(BAR_STEPS, barDuration * px, 50);
+      const barDur = barDuration(bpm);
+      const barStride = pickStep(BAR_STEPS, barDur * px, 50);
       ctx.textAlign = 'left';
       for (const beat of beats) {
         if (!beat.isBar) continue;
-        const barIndex = Math.round((beat.time - gridOffset) / barDuration);
+        const barIndex = Math.round((beat.time - gridOffset) / barDur);
         if (((barIndex % barStride) + barStride) % barStride !== 0) continue;
         const x = (beat.time - start) * px;
         ctx.strokeStyle = COLORS.rulerTick;
@@ -615,6 +616,21 @@ export default function Timeline(props) {
               value={props.bpm() ?? ''}
               onInput={onBpmInput}
             />
+          </div>
+          <div class="barSizeControl">
+            <For each={BAR_SIZES}>
+              {(size) => (
+                <button
+                  type="button"
+                  class="barSizeBtn"
+                  classList={{ active: ((props.config.timeline || {}).beatsPerBar || 4) === size }}
+                  onClick={() => props.onBeatsPerBarChange(size)}
+                  title={`Grid resolution: 1/${size} notes`}
+                >
+                  {`1/${size}`}
+                </button>
+              )}
+            </For>
           </div>
           <div class="editControls">
             <button
