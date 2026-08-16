@@ -48,8 +48,8 @@ colors:
 ```
 
 See `config.example.yaml` for every field (camera easing/overshoot/zoom,
-word split mode, layout gaps, active/inactive line opacity, text-exit
-timing/style) — or tune all of
+word split mode, layout gaps, active/inactive line opacity, previous-line/
+word fade-out style, text-exit timing/style) — or tune all of
 them live from the browser's Settings panel instead of hand-editing YAML;
 see below. Every jump also does a two-phase zoom punch via `camera.zoom`:
 the view pulls OUT from scale 1 down to `zoom.amount` over the first
@@ -111,7 +111,8 @@ gets muxed into the render), or by a manual clock otherwise.
   BPM), `Home` jump to the start.
 - **Settings panel** (top-right "Settings" button) edits every tunable field
   — output size/fps/duration, colors, font size/weight/style, camera
-  timing/easing/zoom, word split mode, layout gaps, line opacity, text-exit
+  timing/easing/zoom, word split mode, layout gaps, line opacity, fade-out
+  (previous line/word dissolve) style/granularity/delay, text-exit
   (cue-end disappearance) timing/style, timeline —
   live against the running preview. `subtitle`/`audio`/`font.path` aren't
   editable here (that needs a file-upload flow this project doesn't have);

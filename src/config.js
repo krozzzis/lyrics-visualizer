@@ -54,6 +54,22 @@ const DEFAULTS = {
       delay: 0.3, // seconds after cue.end before the exit animation starts
       duration: 0.5, // seconds the exit animation takes to reach fully hidden
     },
+    // Animated transition from activeOpacity down to inactiveOpacity when a
+    // cue/line/word is superseded by the next jump, instead of an instant
+    // snap. 'word' granularity staggers each word's own fade, giving a
+    // left-to-right dissolve as an old line is read past.
+    fadeOut: {
+      type: 'none', // 'none' | 'opacity' | 'slide' | 'scale'
+      // 'cue': the whole superseded cue fades together (works in flow and
+      // stacked mode). 'line': the whole stacked row fades together once a
+      // *different row* becomes active — stacked mode only, since every
+      // word shares lineIndex 0 in flow mode and this would never fire.
+      // 'word': each word fades individually, staggered by wordStagger.
+      granularity: 'cue',
+      delay: 0, // seconds after being superseded before the fade starts
+      duration: 0.4, // seconds the fade takes to settle at inactiveOpacity
+      wordStagger: 0.04, // seconds between each word's fade start (granularity: word)
+    },
   },
   timeline: {
     bpm: null, // null hides the beat grid in the browser preview

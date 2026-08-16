@@ -249,6 +249,40 @@ export default function SettingsPanel(props) {
           </Row>
         </Section>
 
+        <Section title="Fade out (superseded lines/words)">
+          <Row label="Type">
+            <select value={config.style.fadeOut.type}
+              onChange={(e) => setConfig('style', 'fadeOut', 'type', e.currentTarget.value)}>
+              <option value="none">none</option>
+              <option value="opacity">opacity</option>
+              <option value="slide">slide</option>
+              <option value="scale">scale</option>
+            </select>
+          </Row>
+          <Row label="Granularity">
+            <select value={config.style.fadeOut.granularity}
+              onChange={(e) => setConfig('style', 'fadeOut', 'granularity', e.currentTarget.value)}>
+              <option value="cue">cue (whole cue fades together)</option>
+              <option value="line">line (stacked row fades together)</option>
+              <option value="word">word (staggered, left to right)</option>
+            </select>
+          </Row>
+          <Row label="Delay (s)">
+            <input type="number" step="0.05" min="0" value={config.style.fadeOut.delay}
+              onInput={(e) => setConfig('style', 'fadeOut', 'delay', toNumber(e.currentTarget.value, config.style.fadeOut.delay))} />
+          </Row>
+          <Row label="Duration (s)">
+            <input type="number" step="0.05" min="0.01" value={config.style.fadeOut.duration}
+              onInput={(e) => setConfig('style', 'fadeOut', 'duration', toNumber(e.currentTarget.value, config.style.fadeOut.duration))} />
+          </Row>
+          {config.style.fadeOut.granularity === 'word' && (
+            <Row label="Word stagger (s)">
+              <input type="number" step="0.01" min="0" value={config.style.fadeOut.wordStagger}
+                onInput={(e) => setConfig('style', 'fadeOut', 'wordStagger', toNumber(e.currentTarget.value, config.style.fadeOut.wordStagger))} />
+            </Row>
+          )}
+        </Section>
+
         <Section title="Timeline">
           <Row label="BPM (blank = off)">
             <input type="number" step="1" min="1" value={config.timeline.bpm ?? ''} placeholder="—"

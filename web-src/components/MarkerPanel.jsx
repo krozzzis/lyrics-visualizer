@@ -187,6 +187,42 @@ export default function MarkerPanel(props) {
           </OverrideRow>
         </Section>
 
+        <Section title="Fade out (superseded lines/words)">
+          <OverrideRow label="Type" path={['style', 'fadeOut', 'type']}>
+            <select
+              value={effectiveValue(['style', 'fadeOut', 'type'])}
+              onChange={(e) => props.onSetOverride(['style', 'fadeOut', 'type'], e.currentTarget.value)}
+            >
+              <option value="none">none</option>
+              <option value="opacity">opacity</option>
+              <option value="slide">slide</option>
+              <option value="scale">scale</option>
+            </select>
+          </OverrideRow>
+          <OverrideRow label="Granularity" path={['style', 'fadeOut', 'granularity']}>
+            <select
+              value={effectiveValue(['style', 'fadeOut', 'granularity'])}
+              onChange={(e) => props.onSetOverride(['style', 'fadeOut', 'granularity'], e.currentTarget.value)}
+            >
+              <option value="cue">cue</option>
+              <option value="line">line</option>
+              <option value="word">word</option>
+            </select>
+          </OverrideRow>
+          <OverrideRow label="Delay (s)" path={['style', 'fadeOut', 'delay']}>
+            <input type="number" step="0.05" min="0" value={effectiveValue(['style', 'fadeOut', 'delay'])}
+              onInput={(e) => props.onSetOverride(['style', 'fadeOut', 'delay'], toNumber(e.currentTarget.value, effectiveValue(['style', 'fadeOut', 'delay'])))} />
+          </OverrideRow>
+          <OverrideRow label="Duration (s)" path={['style', 'fadeOut', 'duration']}>
+            <input type="number" step="0.05" min="0.01" value={effectiveValue(['style', 'fadeOut', 'duration'])}
+              onInput={(e) => props.onSetOverride(['style', 'fadeOut', 'duration'], toNumber(e.currentTarget.value, effectiveValue(['style', 'fadeOut', 'duration'])))} />
+          </OverrideRow>
+          <OverrideRow label="Word stagger (s)" path={['style', 'fadeOut', 'wordStagger']}>
+            <input type="number" step="0.01" min="0" value={effectiveValue(['style', 'fadeOut', 'wordStagger'])}
+              onInput={(e) => props.onSetOverride(['style', 'fadeOut', 'wordStagger'], toNumber(e.currentTarget.value, effectiveValue(['style', 'fadeOut', 'wordStagger'])))} />
+          </OverrideRow>
+        </Section>
+
         <p class="settingsNote">
           Check a field to pin it from this point on the timeline; leave it
           unchecked to keep following the global config (or an earlier

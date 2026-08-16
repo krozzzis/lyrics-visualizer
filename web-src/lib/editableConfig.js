@@ -41,6 +41,13 @@ export function buildEditablePayload(config) {
         delay: config.style.cueExit.delay,
         duration: config.style.cueExit.duration,
       },
+      fadeOut: {
+        type: config.style.fadeOut.type,
+        granularity: config.style.fadeOut.granularity,
+        delay: config.style.fadeOut.delay,
+        duration: config.style.fadeOut.duration,
+        wordStagger: config.style.fadeOut.wordStagger,
+      },
     },
     timeline: {
       bpm: config.timeline.bpm,
