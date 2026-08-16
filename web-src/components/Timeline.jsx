@@ -229,7 +229,7 @@ export default function Timeline(props) {
         if (moved) {
           props.onMoveCommit();
         } else {
-          props.onSelectCue(index);
+          props.onSelectCue(index, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey || e.metaKey });
         }
         return;
       }
@@ -490,7 +490,7 @@ export default function Timeline(props) {
 
     // Cue blocks
     const activeIdx = props.activeIndex();
-    const selectedIdx = props.selectedIndex();
+    const selected = props.selectedIndices();
     const hoveredEdge = hoverEdge();
     props.cues.forEach((cue, i) => {
       if (cue.end < start || cue.start > end) return;
@@ -506,7 +506,7 @@ export default function Timeline(props) {
         ctx.lineWidth = 1;
         ctx.stroke();
       }
-      if (i === selectedIdx) {
+      if (selected.has(i)) {
         ctx.strokeStyle = COLORS.blockSelectedOutline;
         ctx.lineWidth = 2;
         roundRect(ctx, x1 + 1, blockY + 1, Math.max(1, w - 2), blockH - 2, 4);
@@ -604,7 +604,7 @@ export default function Timeline(props) {
     // fields must be read here explicitly or an edit wouldn't repaint.
     props.currentTime();
     props.activeIndex();
-    props.selectedIndex();
+    props.selectedIndices();
     props.bpm();
     containerSize();
     pxPerSecond();

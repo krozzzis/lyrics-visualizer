@@ -36,7 +36,8 @@ export default function Player(props) {
   const [muted, setMuted] = createSignal(false);
   const [snapEnabled, setSnapEnabled] = createSignal(false);
   const [linkResize, setLinkResize] = createSignal(false);
-  const [selectedCueIndex, setSelectedCueIndex] = createSignal(null);
+  const [selectedIndices, setSelectedIndices] = createSignal(new Set());
+  let selectionAnchor = null; // last plain/ctrl-clicked index, for shift-range selects
 
   const sidebarPanel = createResizablePanel('sidebar', {
     defaultSize: 300, min: 200, max: 520, axis: 'x',
@@ -109,14 +110,45 @@ export default function Player(props) {
       { start: t, end: cue.end, text: secondWords.map((w) => w.text).join(' '), words: secondWords },
       ...cues.slice(idx + 1),
     ]);
-    setSelectedCueIndex(null); // indices past idx have shifted
+    clearSelection(); // indices past idx have shifted
     persistCues();
   }
 
-  function deleteCue(index) {
-    if (index < 0 || index >= cues.length) return;
-    setCues(cues.filter((_, i) => i !== index));
-    setSelectedCueIndex(null);
+  function clearSelection() {
+    setSelectedIndices(new Set());
+    selectionAnchor = null;
+  }
+
+  // Plain click selects just this cue; shift-click extends/shrinks a
+  // contiguous range from the last anchor; ctrl/cmd-click toggles this cue
+  // in the existing selection (and becomes the new anchor, matching typical
+  // file-manager selection conventions). index === null clears the selection
+  // (background click).
+  function selectCue(index, opts = {}) {
+    if (index == null) { clearSelection(); return; }
+    if (opts.shiftKey && selectionAnchor != null) {
+      const [lo, hi] = selectionAnchor <= index ? [selectionAnchor, index] : [index, selectionAnchor];
+      const next = new Set();
+      for (let i = lo; i <= hi; i += 1) next.add(i);
+      setSelectedIndices(next);
+      return;
+    }
+    if (opts.ctrlKey) {
+      const next = new Set(selectedIndices());
+      if (next.has(index)) next.delete(index); else next.add(index);
+      setSelectedIndices(next);
+      selectionAnchor = index;
+      return;
+    }
+    setSelectedIndices(new Set([index]));
+    selectionAnchor = index;
+  }
+
+  function deleteSelectedCues() {
+    const sel = selectedIndices();
+    if (sel.size === 0) return;
+    setCues(cues.filter((_, i) => !sel.has(i)));
+    clearSelection();
     persistCues();
   }
 
@@ -152,7 +184,8 @@ export default function Player(props) {
     const end = Math.min(upper, start + NEW_CUE_DURATION);
 
     setCues([...cues.slice(0, idx), { start, end, text: '', words: [] }, ...cues.slice(idx)]);
-    setSelectedCueIndex(idx);
+    setSelectedIndices(new Set([idx]));
+    selectionAnchor = idx;
     persistCues();
     return idx;
   }
@@ -293,9 +326,9 @@ export default function Player(props) {
         e.preventDefault();
         sliceAtCursor();
       } else if (e.code === 'Delete' || e.code === 'Backspace') {
-        if (selectedCueIndex() != null) {
+        if (selectedIndices().size > 0) {
           e.preventDefault();
-          deleteCue(selectedCueIndex());
+          deleteSelectedCues();
         }
       }
     }
@@ -350,8 +383,8 @@ export default function Player(props) {
           onResizeCommit={commitCueEdit}
           onMoveCue={moveCueTo}
           onMoveCommit={commitCueEdit}
-          selectedIndex={selectedCueIndex}
-          onSelectCue={setSelectedCueIndex}
+          selectedIndices={selectedIndices}
+          onSelectCue={selectCue}
         />
       </div>
       <Show when={showSettings()}>
