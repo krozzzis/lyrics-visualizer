@@ -651,6 +651,9 @@ export default function Timeline(props) {
           <PlayPauseButton playing={props.playing} onToggle={props.onToggle} />
           <button type="button" class="transportBtn" onClick={() => skipBy(skipStep())} title="Skip forward">▶▶</button>
           <button type="button" class="transportBtn" onClick={seekNextCue} title="Next line">⏭</button>
+          <span class="timeDisplay">
+            {formatClock(props.currentTime())} / {formatClock(props.duration())}
+          </span>
         </div>
         <div class="headerRight">
           <div class="zoomControls">

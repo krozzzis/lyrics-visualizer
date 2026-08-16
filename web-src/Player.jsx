@@ -249,8 +249,6 @@ export default function Player(props) {
       <div class="main">
         <ControlsBar
           config={config}
-          currentTime={currentTime}
-          duration={duration}
           showSettings={showSettings}
           onToggleSettings={() => setShowSettings((v) => !v)}
         />
