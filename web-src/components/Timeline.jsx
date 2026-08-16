@@ -16,6 +16,7 @@ const COLORS = {
   blockBorder: '#33353f',
   blockFillActive: '#7c5cff',
   blockSelectedOutline: '#ffffff',
+  resizeEdgeHighlight: '#ffd166',
   blockText: '#9297a3',
   blockTextActive: '#ffffff',
   playhead: '#ffffff',
@@ -60,6 +61,7 @@ export default function Timeline(props) {
   const [userInteracting, setUserInteracting] = createSignal(false);
   const [fitted, setFitted] = createSignal(false);
   const [editingIndex, setEditingIndex] = createSignal(-1);
+  const [hoverEdge, setHoverEdge] = createSignal(null); // { index, edge } while hovering/dragging a cue block's edge
 
   let interactingTimer;
   function markInteracting() {
@@ -156,6 +158,7 @@ export default function Timeline(props) {
       const hit = resizeHandleAt(x, y);
       if (hit) {
         resizing = hit;
+        setHoverEdge(hit);
         viewportEl.setPointerCapture(e.pointerId);
         return;
       }
@@ -204,12 +207,19 @@ export default function Timeline(props) {
         return;
       }
       // Not interacting: just hover feedback for the resize cursor.
-      viewportEl.classList.toggle('resizeHover', !!resizeHandleAt(x, e.clientY - rect.top));
+      const hit = resizeHandleAt(x, e.clientY - rect.top);
+      viewportEl.classList.toggle('resizeHover', !!hit);
+      setHoverEdge(hit);
+    }
+
+    function onPointerLeave() {
+      if (!resizing) setHoverEdge(null);
     }
 
     function onPointerUp(e) {
       if (resizing) {
         resizing = null;
+        setHoverEdge(null);
         props.onResizeCommit();
         return;
       }
@@ -259,12 +269,14 @@ export default function Timeline(props) {
     viewportEl.addEventListener('pointerdown', onPointerDown);
     viewportEl.addEventListener('pointermove', onPointerMove);
     viewportEl.addEventListener('pointerup', onPointerUp);
+    viewportEl.addEventListener('pointerleave', onPointerLeave);
     viewportEl.addEventListener('wheel', onWheel, { passive: false });
     viewportEl.addEventListener('dblclick', onDblClick);
     onCleanup(() => {
       viewportEl.removeEventListener('pointerdown', onPointerDown);
       viewportEl.removeEventListener('pointermove', onPointerMove);
       viewportEl.removeEventListener('pointerup', onPointerUp);
+      viewportEl.removeEventListener('pointerleave', onPointerLeave);
       viewportEl.removeEventListener('wheel', onWheel);
       viewportEl.removeEventListener('dblclick', onDblClick);
     });
@@ -479,6 +491,7 @@ export default function Timeline(props) {
     // Cue blocks
     const activeIdx = props.activeIndex();
     const selectedIdx = props.selectedIndex();
+    const hoveredEdge = hoverEdge();
     props.cues.forEach((cue, i) => {
       if (cue.end < start || cue.start > end) return;
       const x1 = (cue.start - start) * px;
@@ -497,6 +510,15 @@ export default function Timeline(props) {
         ctx.strokeStyle = COLORS.blockSelectedOutline;
         ctx.lineWidth = 2;
         roundRect(ctx, x1 + 1, blockY + 1, Math.max(1, w - 2), blockH - 2, 4);
+        ctx.stroke();
+      }
+      if (hoveredEdge && hoveredEdge.index === i) {
+        const edgeX = hoveredEdge.edge === 'start' ? x1 : x2;
+        ctx.strokeStyle = COLORS.resizeEdgeHighlight;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(edgeX, blockY - 2);
+        ctx.lineTo(edgeX, blockY + blockH + 2);
         ctx.stroke();
       }
       if (w > 14) {
@@ -588,6 +610,7 @@ export default function Timeline(props) {
     pxPerSecond();
     scrollOffset();
     peakData();
+    hoverEdge();
     props.cues.forEach((cue) => { void cue.start; void cue.end; void cue.text; });
     draw();
   });
