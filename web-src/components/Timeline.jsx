@@ -624,7 +624,7 @@ export default function Timeline(props) {
               onClick={props.onToggleSnap}
               title="Snap to grid (cursor clicks and block resizing)"
             >
-              ⌗
+              🧲
             </button>
             <button
               type="button"
