@@ -163,6 +163,81 @@ node bin/render.js frame -c config.yaml -t 65.5    # single PNG at t=65.5s
   can land slightly off the beat — opt in only if you don't have real
   word-level timing and want the word-by-word look anyway.
 
+## Desktop app (Electron)
+
+The same browser preview, packaged as a desktop app — no terminal, no manually
+started server. It embeds `src/server.js` directly (not as a subprocess) and
+rebuilds it on a fresh local port whenever you switch projects.
+
+```sh
+nix develop
+npm install
+npm run build      # web-src/ → web/dist/, same as the browser preview
+npm run electron   # opens the app
+```
+
+- **File > New Project…** — pick an empty (or new) folder; it's scaffolded
+  with a `config.yaml`, a copy of the bundled demo font/subtitle so it's
+  playable immediately, and a `data/` folder to drop your own files into.
+- **File > Open Project…** (`Ctrl/Cmd+O`) — pick any project's `config.yaml`.
+- **File > Render Video** (`Ctrl/Cmd+R`) — same server-side render as the
+  browser's Render button.
+- The rest of File/Edit/View/Window/Help are standard app menu items
+  (reload, zoom, dev tools, undo/redo/cut/copy/paste in text fields, quit).
+
+The app remembers your last-opened project (`config.yaml`'s path, in
+Electron's per-OS userData dir) and reopens straight to it next launch.
+
+### Building and packaging via Nix
+
+```sh
+nix build .#lyrics-visualizer          # or just .#  — builds + runs on this OS
+./result/bin/lyrics-visualizer
+```
+
+That's a real, runnable package for the OS you built it on (Linux or macOS —
+nixpkgs' own `electron`, wrapped with `ffmpeg` on `PATH`; no npm-downloaded
+Electron binary involved, which matters on NixOS since that one can't run
+without `nix-ld`).
+
+Cross-platform packages are also available, built entirely from a Nix
+derivation graph (no `electron-builder`, which wants network access at build
+time and doesn't fit the Nix sandbox):
+
+```sh
+nix build .#lyrics-visualizer-windows-x64
+nix build .#lyrics-visualizer-macos-x64
+nix build .#lyrics-visualizer-macos-arm64
+```
+
+These are **not** cross-compiled in the traditional sense — Electron ships
+official prebuilt binaries per platform, so "porting" the app means fetching
+that platform's Electron zip plus its matching prebuilt `@napi-rs/canvas`
+native module (also prebuilt per-platform, via napi-rs — no compiler needed
+either way) and assembling the app's JS/assets around them, all as ordinary
+Nix fixed-output fetches. Concretely: everything is pure JS and identical
+across platforms *except* `@napi-rs/canvas`'s native `.node` binary, which
+its own `js-binding.js` already picks by `process.platform`/`process.arch`
+at runtime — so swapping just that one file (plus the Electron binary
+itself) is enough.
+
+What that buys you, honestly:
+
+- **Windows** — buildable and structurally complete (`lyrics-visualizer.exe`
+  next to a real `resources/app` with the right native canvas binary), but
+  built and only ever inspected from Linux — **not launched or tested**.
+- **macOS** (`x64`/`arm64`) — same idea (`Lyrics Visualizer.app`), and
+  additionally **unsigned**: Gatekeeper will refuse to open it on a real Mac
+  without the user right-clicking → Open (or `xattr -cr` on the `.app`) to
+  bypass the quarantine flag. Proper code signing/notarization needs Apple's
+  toolchain and a developer certificate, neither of which is available here.
+- **ffmpeg is not bundled** for either cross target (only the native Nix
+  package wraps one via `PATH`) — ffmpeg's own official Windows/macOS static
+  builds aren't Nix packages with a hash this repo can pin and verify from
+  here, so **Render Video will fail on these two builds** until the target
+  machine has `ffmpeg` on `PATH` itself. Live preview and everything else
+  works.
+
 ## Architecture
 
 ```
@@ -174,8 +249,11 @@ src/camera.js    layout + config     →  jump keyframes, eased camera-x(t)/y(t)
 src/scene.js     drawFrame(ctx, ...) →  the one draw routine both runtimes call
 src/config.js    config.yaml         →  validated, path-resolved config object
 src/configMarkers.js  config + config-markers.json  →  camera/colors/style resolved at time t
+src/server.js    createServer(configPath) → express app (serves web/dist + the /api/* routes)
 bin/render.js    Node CLI:  dump | frame | video (drives @napi-rs/canvas + ffmpeg)
-bin/serve.js     serves web/dist (built by Vite) + hands cues/config/markers to the browser as JSON
+bin/serve.js     thin CLI wrapper: src/server.js + app.listen(port)
+electron/        desktop shell: embeds src/server.js directly (no subprocess), native menu,
+                  Open/New Project (rebuilds the server + reloads the window per project)
 web-src/         SolidJS browser player (Player, Sidebar, Timeline, Stage, ControlsBar, MarkerPanel)
 web/dist/        Vite build output — gitignored, produced by `npm run build`
 ```

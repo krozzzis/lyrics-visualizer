@@ -1,6 +1,8 @@
 node_modules/
 web/dist/
 renders/
+result
+result-*
 *.mp4
 *.mov
 *.webm
