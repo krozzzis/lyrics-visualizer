@@ -78,3 +78,11 @@ that was only read, not clicked through, is not verified.
   already-running instance on the port first (`ss -ltnp | grep 8080`) —
   this project's dev server caches config/cues in memory at startup, so a
   stale process silently serves outdated values instead of erroring.
+- In `web-src/`, a bare `setStore(path..., someObject)` **merges** `someObject`
+  onto the existing value at that path — keys absent from the new object are
+  left untouched, not removed. Any store write meant to *clear/shrink* a
+  nested object (not just add/overwrite keys) needs
+  `setStore(path..., reconcile(someObject))` (from `solid-js/store`) to force
+  an actual replace. Found via Player.jsx's marker-override "clear" checkbox
+  silently no-op'ing — confirmed by logging the store's value immediately
+  after the `setStore` call, not by reasoning about the diff.
