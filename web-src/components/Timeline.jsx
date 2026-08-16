@@ -82,6 +82,7 @@ export default function Timeline(props) {
   }
 
   function zoomBy(factor) {
+    markInteracting();
     const width = containerSize().width;
     const centerTime = scrollOffset() + (width / 2) / pxPerSecond();
     const next = Math.min(MAX_PX_PER_SECOND, Math.max(MIN_PX_PER_SECOND, pxPerSecond() * factor));
@@ -178,6 +179,7 @@ export default function Timeline(props) {
       const x = e.clientX - rect.left;
 
       if (resizing) {
+        markInteracting();
         props.onResizeCue(resizing.index, resizing.edge, scrollOffset() + x / pxPerSecond());
         return;
       }
@@ -344,24 +346,32 @@ export default function Timeline(props) {
 
   // --- keep the playhead in view ---
   // While playing: DAW-style scroll-follow, re-centering once the playhead
-  // nears the edge. While paused: don't fight a manual pan/click, but if an
-  // external seek (sidebar, controls bar) lands outside the visible window
-  // entirely, snap it into view rather than leaving the timeline pointed
-  // somewhere stale.
+  // nears the edge (suppressed while the user is actively panning/zooming,
+  // resuming shortly after they let go via userInteracting's timeout).
+  // While paused: don't fight a manual pan/zoom — currentTime never changes
+  // on its own while paused, so re-centering only happens in direct response
+  // to an actual seek (sidebar, controls bar, ruler click) landing outside
+  // the visible window, keyed off currentTime actually changing rather than
+  // off this effect merely re-running (which also happens on every pan/zoom
+  // tick, since those touch scrollOffset/pxPerSecond too — using userInteracting's
+  // 1.5s timeout to gate that case previously caused the view to snap back to
+  // the playhead ~1.5s after any manual pan settled).
+  let lastSeenTime = -1;
   createEffect(() => {
     const t = props.currentTime();
-    if (userInteracting()) return;
     const width = containerSize().width;
     if (width <= 0) return;
     const x = (t - scrollOffset()) * pxPerSecond();
 
     if (props.playing()) {
-      if (x < width * AUTO_FOLLOW_MARGIN || x > width * (1 - AUTO_FOLLOW_MARGIN)) {
+      if (!userInteracting()
+        && (x < width * AUTO_FOLLOW_MARGIN || x > width * (1 - AUTO_FOLLOW_MARGIN))) {
         setScrollOffset(clampScroll(t - (width * AUTO_FOLLOW_TARGET) / pxPerSecond()));
       }
-    } else if (x < 0 || x > width) {
+    } else if (t !== lastSeenTime && (x < 0 || x > width)) {
       setScrollOffset(clampScroll(t - (width * AUTO_FOLLOW_TARGET) / pxPerSecond()));
     }
+    lastSeenTime = t;
   });
 
   // --- drawing ---
