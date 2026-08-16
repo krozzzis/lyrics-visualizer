@@ -216,6 +216,7 @@ export default function Player(props) {
   onMount(() => {
     function onKeyDown(e) {
       if (isTextEntry(document.activeElement)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
