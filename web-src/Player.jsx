@@ -1,7 +1,7 @@
 import {
   createSignal, createEffect, createMemo, onMount, onCleanup, Show,
 } from 'solid-js';
-import { createStore } from 'solid-js/store';
+import { createStore, reconcile } from 'solid-js/store';
 import Sidebar from './components/Sidebar.jsx';
 import Stage, { drawFrame } from './components/Stage.jsx';
 import ControlsBar from './components/ControlsBar.jsx';
@@ -383,7 +383,13 @@ export default function Player(props) {
   function setMarkerOverride(id, path, value) {
     const i = markerIndex(id);
     if (i < 0) return;
-    setMarkers(i, 'overrides', deepSet(markers[i].overrides || {}, path, value));
+    const next = deepSet(markers[i].overrides || {}, path, value);
+    // Solid's store setter merges plain objects at a path rather than
+    // replacing them (keys absent from `next` — e.g. a field just cleared —
+    // are otherwise left untouched instead of removed), so a bare
+    // setMarkers(i, 'overrides', next) would silently fail to ever clear a
+    // field. reconcile() forces an actual replace/diff instead of a merge.
+    setMarkers(i, 'overrides', reconcile(next));
     persistMarkers();
   }
 

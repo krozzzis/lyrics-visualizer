@@ -54,8 +54,10 @@ function buildFfmpegArgs(config, markers, outPath, fps) {
   // one alpha path actually verified to preserve alpha end-to-end.
   if (wantsAlpha && ext !== '.mov') {
     throw new Error(
-      `Config background is transparent/translucent but output is ${ext || '(no extension)'}. `
-      + 'Use a .mov output path (ProRes 4444, verified to preserve alpha), or set colors.background to an opaque color.',
+      `A transparent/translucent background is in play (config.colors.background, or a `
+      + `config marker's colors.background override) but output is ${ext || '(no extension)'}. `
+      + 'Use a .mov output path (ProRes 4444, verified to preserve alpha), or make every '
+      + 'background — base config and every marker — opaque.',
     );
   }
 
