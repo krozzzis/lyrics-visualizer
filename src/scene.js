@@ -109,16 +109,17 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
     let dy = 0;
     let scale = 1;
 
-    // fadeOut: for a word whose cue has already been superseded — NOT a
-    // word whose cue simply isn't active yet, e.g. one still ahead of the
-    // camera; cueIndex !== activeCueIndex is true for both, so this is
-    // gated on t having actually reached this cue's supersede time — this
-    // animates the active->inactive opacity transition instead of snapping
-    // instantly. The trigger time depends on granularity: 'cue' and 'word'
-    // both key off when this word's own cue was superseded (word
-    // additionally staggers by its position in the cue); 'line' keys off
-    // when this word's stacked row was superseded, so the whole row fades
-    // together regardless of which of its cues is which.
+    // fadeOut: other cues in the active line, and previous lines, are
+    // already dimmed to inactiveOpacity immediately by the ternary above —
+    // that's the default, unanimated state. fadeOut only comes in later: it
+    // fades that resting inactiveOpacity down to fully hidden once the word
+    // has been superseded for a while, so it's the animation that removes
+    // old content rather than the thing that dims it. The trigger time
+    // depends on granularity: 'cue' and 'word' both key off when this
+    // word's own cue was superseded (word additionally staggers by its
+    // position in the cue); 'line' keys off when this word's stacked row
+    // was superseded, so the whole row disappears together regardless of
+    // which of its cues is which.
     if (word.cueIndex !== activeCueIndex && fadeOutType && fadeOutType !== 'none'
       && t >= cueSupersedeTime[word.cueIndex]) {
       const trigger = fadeOutGranularity === 'line'
@@ -126,17 +127,12 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
         : cueSupersedeTime[word.cueIndex]
           + (fadeOutGranularity === 'word' ? word.wordIndex * (fadeOutCfg.wordStagger || 0) : 0);
       const progress = exitProgress(trigger, fadeOutCfg.delay, fadeOutCfg.duration, t);
-      opacity = activeOpacity + (inactiveOpacity - activeOpacity) * progress;
-      // Only apply the slide/scale transform while still animating — its
-      // endpoint (inactiveOpacity) is still on-screen, unlike cueExit's
-      // fully-hidden endpoint, so a word settling here should return to its
-      // normal position/size rather than stay permanently offset/shrunk.
-      if (progress < 1) {
-        const off = exitOffset(progress, fadeOutType, config.font.size);
-        dx += off.dx;
-        dy += off.dy;
-        scale *= off.scale;
-      }
+      if (progress >= 1) continue;
+      opacity *= (1 - progress);
+      const off = exitOffset(progress, fadeOutType, config.font.size);
+      dx += off.dx;
+      dy += off.dy;
+      scale *= off.scale;
     }
 
     // cueExit: fades this word fully out once its own cue has ended (plus

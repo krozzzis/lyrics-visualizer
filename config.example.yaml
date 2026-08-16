@@ -107,20 +107,24 @@ style:
     type: none # none | opacity | slide | scale
     delay: 0.3 # seconds after cue.end before the exit animation starts
     duration: 0.5 # seconds the exit animation takes to reach fully hidden
-  # Animated transition from activeOpacity down to inactiveOpacity when a
-  # cue/line/word is superseded by the next jump, instead of an instant
-  # snap. 'none' (default) disables it — unchanged behavior.
+  # Other cues in the active line, and previous lines, are already dimmed
+  # to inactiveOpacity immediately (unanimated — see activeOpacity/
+  # inactiveOpacity above). fadeOut is purely what removes them later: once
+  # a cue/line/word has been superseded for a while, it fades from
+  # inactiveOpacity down to fully hidden. 'none' (default) disables it —
+  # superseded content just stays at inactiveOpacity forever, unchanged
+  # behavior.
   fadeOut:
     type: none # none | opacity | slide | scale
-    # cue: the whole superseded cue fades together (works in flow and
-    # stacked mode). line: the whole stacked row fades together once a
+    # cue: the whole superseded cue disappears together (works in flow and
+    # stacked mode). line: the whole stacked row disappears together once a
     # *different row* becomes active (stacked mode only — in flow mode every
     # word shares one row, so this would never fire; use 'cue' there). word:
-    # each word fades individually, staggered by wordStagger, giving a
+    # each word disappears individually, staggered by wordStagger, giving a
     # left-to-right dissolve as an old line is read past.
     granularity: cue # cue | line | word
     delay: 0 # seconds after being superseded before the fade starts
-    duration: 0.4 # seconds the fade takes to settle at inactiveOpacity
+    duration: 0.4 # seconds the fade takes to reach fully hidden
     wordStagger: 0.04 # seconds between each word's fade start (granularity: word)
     # In stacked mode, layout.showPrevLine only keeps ONE row above the
     # active one on screen at all — a row still mid-fade gets hard-cut the
