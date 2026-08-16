@@ -392,6 +392,9 @@ button {
   align-items: center;
   gap: 14px;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .headerRight {
@@ -400,6 +403,9 @@ button {
   justify-content: flex-end;
   gap: 14px;
   min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .transportControls {
@@ -413,6 +419,7 @@ button {
 .transportBtn {
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--panel-alt);
@@ -462,23 +469,27 @@ button {
   align-items: center;
   gap: 6px;
   color: var(--text-faint);
+  flex-shrink: 0;
 }
 
 .editControls {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .barSizeControl {
   display: flex;
   align-items: center;
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .barSizeBtn {
   height: 32px;
   padding: 0 8px;
+  flex-shrink: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--panel-alt);
@@ -507,6 +518,7 @@ button {
 
 .bpmControl input[type="number"] {
   width: 4.5em;
+  flex-shrink: 0;
   background: var(--panel-alt);
   border: 1px solid var(--border);
   color: var(--text);
@@ -525,11 +537,13 @@ button {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .zoomControls button {
   width: 24px;
   height: 24px;
+  flex-shrink: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--panel-alt);
