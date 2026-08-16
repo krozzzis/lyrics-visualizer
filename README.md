@@ -180,8 +180,9 @@ npm run electron   # opens the app
   with a `config.yaml`, a copy of the bundled demo font/subtitle so it's
   playable immediately, and a `data/` folder to drop your own files into.
 - **File > Open Project…** (`Ctrl/Cmd+O`) — pick any project's `config.yaml`.
-- **File > Render Video** (`Ctrl/Cmd+R`) — same server-side render as the
-  browser's Render button.
+- **File > Render Video** — same server-side render as the browser's Render
+  button. No keyboard shortcut on purpose: `Ctrl/Cmd+R`/`+Shift+R` are
+  already View > Reload/Force Reload's default accelerators.
 - The rest of File/Edit/View/Window/Help are standard app menu items
   (reload, zoom, dev tools, undo/redo/cut/copy/paste in text fields, quit).
 

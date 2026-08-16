@@ -134,6 +134,15 @@ async function openProject(configPath) {
 }
 
 async function newProject() {
+  // Checked before scaffolding, not just inside openProject(): otherwise a
+  // New Project started mid-render leaves a fully-created project directory
+  // behind and then refuses to open it, which reads as "New Project is
+  // broken" rather than "wait for the render."
+  if (await hasActiveRender()) {
+    dialog.showErrorBox('Render in progress', 'Wait for the current render to finish before starting a new project.');
+    return;
+  }
+
   const result = await dialog.showOpenDialog(win, {
     title: 'Choose a folder for the new project',
     properties: ['openDirectory', 'createDirectory'],
@@ -194,10 +203,10 @@ function buildMenu() {
         { type: 'separator' },
         {
           label: 'Render Video',
-          // Not CmdOrCtrl+R: that's View > Reload's default accelerator
-          // (would silently lose the binding), and a reflex key is a bad
-          // fit for kicking off a multi-minute ffmpeg render anyway.
-          accelerator: 'CmdOrCtrl+Shift+R',
+          // Deliberately no accelerator: CmdOrCtrl+R is View > Reload's
+          // default, and CmdOrCtrl+Shift+R is View > Force Reload's — both
+          // roles below already claim those. A reflex key is also a bad
+          // fit for kicking off a multi-minute ffmpeg render regardless.
           click: () => win?.webContents.send('menu:render-video'),
         },
         { type: 'separator' },
