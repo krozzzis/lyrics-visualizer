@@ -24,6 +24,10 @@ export default function RenderControls(props) {
   // becomes unreachable until the next render overwrites it.
   onMount(poll);
 
+  // window.electronAPI only exists inside the Electron shell (see
+  // electron/preload.js) — undefined, so a no-op, in the plain-browser build.
+  onMount(() => window.electronAPI?.onRenderVideo(startRender));
+
   async function poll() {
     try {
       const res = await fetch('/api/render/status');

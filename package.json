@@ -5,13 +5,15 @@
   "private": true,
   "license": "MIT",
   "type": "commonjs",
+  "main": "electron/main.js",
   "bin": {
     "lyrics-visualizer": "./bin/render.js"
   },
   "scripts": {
     "render": "node bin/render.js",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "electron": "electron ."
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.53",
@@ -21,6 +23,8 @@
     "solid-js": "^1.9.3"
   },
   "devDependencies": {
+    "electron": "41.0.2",
+    "playwright-core": "^1.62.1",
     "vite": "^5.4.11",
     "vite-plugin-solid": "^2.11.0"
   }

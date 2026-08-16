@@ -16,7 +16,15 @@
           packages = [
             pkgs.nodejs_22
             pkgs.ffmpeg
+            pkgs.electron
           ];
+
+          # The npm `electron` package's launcher (node_modules/.bin/electron)
+          # downloads a generic-Linux dynamically linked binary that NixOS
+          # can't run (no FHS loader). Pointing it at nixpkgs' own
+          # (autoPatchelf'd) Electron via this env var makes `npm run
+          # electron` use that instead — see node_modules/electron/index.js.
+          ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron}/bin";
 
           shellHook = ''
             if [ ! -d node_modules ]; then
