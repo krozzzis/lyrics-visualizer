@@ -72,8 +72,15 @@ function scaffoldProject(dir) {
   fs.mkdirSync(fontsDir, { recursive: true });
 
   const exampleDir = bundledExampleDir();
-  fs.copyFileSync(path.join(exampleDir, 'fonts', 'DejaVuSans.ttf'), path.join(fontsDir, 'DejaVuSans.ttf'));
-  fs.copyFileSync(path.join(exampleDir, 'demo.ass'), path.join(dataDir, 'demo.ass'));
+  const destFont = path.join(fontsDir, 'DejaVuSans.ttf');
+  const destSubtitle = path.join(dataDir, 'demo.ass');
+  fs.copyFileSync(path.join(exampleDir, 'fonts', 'DejaVuSans.ttf'), destFont);
+  fs.copyFileSync(path.join(exampleDir, 'demo.ass'), destSubtitle);
+  // copyFileSync preserves the source file's mode — read-only (0444) when
+  // the source is a packaged Nix store path, which would otherwise leave a
+  // user unable to edit/overwrite their own project's copy of these files.
+  fs.chmodSync(destFont, 0o644);
+  fs.chmodSync(destSubtitle, 0o644);
 
   const config = {
     subtitle: './data/demo.ass',

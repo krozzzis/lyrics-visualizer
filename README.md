@@ -176,9 +176,10 @@ npm run build      # web-src/ → web/dist/, same as the browser preview
 npm run electron   # opens the app
 ```
 
-- **File > New Project…** — pick an empty (or new) folder; it's scaffolded
-  with a `config.yaml`, a copy of the bundled demo font/subtitle so it's
-  playable immediately, and a `data/` folder to drop your own files into.
+- **File > New Project…** (`Ctrl/Cmd+N`) — pick an empty (or new) folder;
+  it's scaffolded with a `config.yaml`, a copy of the bundled demo
+  font/subtitle so it's playable immediately, and a `data/` folder to drop
+  your own files into.
 - **File > Open Project…** (`Ctrl/Cmd+O`) — pick any project's `config.yaml`.
 - **File > Render Video** — same server-side render as the browser's Render
   button. No keyboard shortcut on purpose: `Ctrl/Cmd+R`/`+Shift+R` are
