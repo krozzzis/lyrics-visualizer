@@ -1,5 +1,9 @@
-import { createSignal } from 'solid-js';
+import {
+  createSignal, createEffect, onCleanup, on,
+} from 'solid-js';
 import { buildEditablePayload } from '../lib/editableConfig.js';
+
+const AUTOSAVE_DEBOUNCE_MS = 600;
 
 function toNumber(raw, fallback = 0) {
   const v = parseFloat(raw);
@@ -32,13 +36,13 @@ function Row(props) {
 
 export default function SettingsPanel(props) {
   const { config, setConfig } = props;
-  const [saving, setSaving] = createSignal(false);
-  const [saveState, setSaveState] = createSignal(null); // null | 'ok' | 'error'
+  const [saveState, setSaveState] = createSignal(null); // null | 'saving' | 'ok' | 'error'
   const [saveMessage, setSaveMessage] = createSignal('');
+  let clearTimer = null;
+  let debounceTimer = null;
 
   async function save() {
-    setSaving(true);
-    setSaveState(null);
+    setSaveState('saving');
     const body = buildEditablePayload(config);
     try {
       const res = await fetch('/api/config', {
@@ -54,20 +58,38 @@ export default function SettingsPanel(props) {
       setSaveState('error');
       setSaveMessage(err.message);
     } finally {
-      setSaving(false);
-      setTimeout(() => setSaveState(null), 3000);
+      if (clearTimer) clearTimeout(clearTimer);
+      clearTimer = setTimeout(() => setSaveState(null), 3000);
     }
   }
+
+  // Autosaves on every settings-panel edit, debounced so a dragged number
+  // input or a color hex typed character-by-character doesn't fire one
+  // request per keystroke — no separate Save step, same as config markers
+  // (see MarkerPanel.jsx / src/configMarkers.js). `on(..., { defer: true })`
+  // skips the effect's initial run so loading the panel doesn't immediately
+  // re-save the config it just loaded.
+  createEffect(on(
+    () => JSON.stringify(buildEditablePayload(config)),
+    () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(save, AUTOSAVE_DEBOUNCE_MS);
+    },
+    { defer: true },
+  ));
+
+  onCleanup(() => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (clearTimer) clearTimeout(clearTimer);
+  });
 
   return (
     <aside id="settingsPanel" style={{ width: `${props.width()}px` }}>
       <div id="settingsHeader">
         <span>Settings</span>
-        <button type="button" class="smallBtn" disabled={saving()} onClick={save}>
-          {saving() ? 'Saving…' : 'Save to config.yaml'}
-        </button>
+        {saveState() === 'saving' && <span class="settingsAutosaveStatus">Saving…</span>}
       </div>
-      {saveState() && (
+      {(saveState() === 'ok' || saveState() === 'error') && (
         <div classList={{ settingsStatus: true, ok: saveState() === 'ok', error: saveState() === 'error' }}>
           {saveMessage()}
         </div>
@@ -305,7 +327,8 @@ export default function SettingsPanel(props) {
 
         <p class="settingsNote">
           Subtitle/audio/font file paths aren't editable here — change them in
-          config.yaml directly. Saving rewrites config.yaml without comments.
+          config.yaml directly. Changes save automatically — no separate Save
+          step — and rewrite config.yaml without comments.
         </p>
       </div>
     </aside>

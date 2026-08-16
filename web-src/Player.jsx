@@ -277,9 +277,9 @@ export default function Player(props) {
   // Config markers: points on the timeline (drawn as a dot below the cue
   // blocks) where camera/colors/style locally override the global config
   // from that point on — see src/configMarkers.js. Persisted immediately on
-  // every mutation, like cues, rather than requiring the settings panel's
-  // explicit Save step: each add/move/delete/override edit is already a
-  // single, deliberate, complete action, not a batch of unrelated tweaks.
+  // every mutation, like cues and the settings panel: each add/move/delete/
+  // override edit is already a single, deliberate, complete action, not a
+  // batch of unrelated tweaks.
   async function persistMarkers() {
     try {
       const body = JSON.stringify({

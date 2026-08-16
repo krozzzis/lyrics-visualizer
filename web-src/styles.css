@@ -770,6 +770,12 @@ button {
   font-weight: 600;
 }
 
+.settingsAutosaveStatus {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted, #888);
+}
+
 .settingsStatus {
   padding: 8px 14px;
   font-size: 12px;

@@ -30,10 +30,11 @@ per-cue code path.
   CanvasRenderingContext2D.
 - `bin/serve.js` — dev server: serves `web/dist`, `GET /api/data` (config +
   cues + config markers for the browser), `POST /api/config` (persist
-  settings-panel edits to the YAML file this server was started with),
-  `POST /api/markers` (persist config-marker add/move/delete/override edits
-  to `config-markers.json`, immediately — no separate Save step, like
-  `POST /api/cues`), `POST /api/render` + `GET /api/render/status` +
+  settings-panel edits to the YAML file this server was started with,
+  autosaved on a debounce — no explicit Save step), `POST /api/markers`
+  (persist config-marker add/move/delete/override edits to
+  `config-markers.json`, immediately — like `POST /api/cues`),
+  `POST /api/render` + `GET /api/render/status` +
   `GET /api/render/download` (server-side render triggered from the browser,
   sharing `src/render.js` with the CLI's `video` command).
 - `web-src/` — Solid.js browser player, built by Vite into `web/dist`

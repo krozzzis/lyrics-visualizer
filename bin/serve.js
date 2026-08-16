@@ -144,12 +144,11 @@ app.post('/api/cues', (req, res) => {
 });
 
 // Persists config-marker edits (add/move/delete/override changes from the
-// timeline) to config-markers.json, right away — like /api/cues, and unlike
-// /api/config's explicit-Save flow, since markers are timeline objects the
-// user manipulates directly rather than a batch of settings-panel tweaks.
-// Every marker's `overrides` is sanitized to the same whitelist drawFrame
-// actually resolves (camera/colors/style) so a stray field can't silently
-// pretend to work.
+// timeline) to config-markers.json, right away — like /api/cues and
+// /api/config, since a marker edit is already a single, deliberate, complete
+// action rather than a batch of unrelated tweaks. Every marker's `overrides`
+// is sanitized to the same whitelist drawFrame actually resolves (camera/
+// colors/style) so a stray field can't silently pretend to work.
 app.post('/api/markers', (req, res) => {
   try {
     const incoming = (req.body || {}).markers;
@@ -177,9 +176,9 @@ app.post('/api/markers', (req, res) => {
 //
 // Takes the same whitelisted fields as /api/config, but merges them onto the
 // full in-memory `config` for this render only, without touching the file:
-// the settings panel can have live unsaved edits (font size dragged, zoom
-// toggled) that the user hasn't clicked "Save" for yet, and the video should
-// match what's on screen, not what's last on disk.
+// the settings panel autosaves on a short debounce (see SettingsPanel.jsx),
+// so an edit made just before hitting render may not have reached disk yet,
+// and the video should match what's on screen, not what's last on disk.
 let renderJob = null;
 const projectDir = path.dirname(path.resolve(opts.config));
 const rendersDir = path.join(projectDir, 'renders');
