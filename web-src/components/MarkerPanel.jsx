@@ -165,6 +165,28 @@ export default function MarkerPanel(props) {
           </OverrideRow>
         </Section>
 
+        <Section title="Text exit (after cue ends)">
+          <OverrideRow label="Type" path={['style', 'cueExit', 'type']}>
+            <select
+              value={effectiveValue(['style', 'cueExit', 'type'])}
+              onChange={(e) => props.onSetOverride(['style', 'cueExit', 'type'], e.currentTarget.value)}
+            >
+              <option value="none">none</option>
+              <option value="opacity">opacity</option>
+              <option value="slide">slide</option>
+              <option value="scale">scale</option>
+            </select>
+          </OverrideRow>
+          <OverrideRow label="Delay (s)" path={['style', 'cueExit', 'delay']}>
+            <input type="number" step="0.05" min="0" value={effectiveValue(['style', 'cueExit', 'delay'])}
+              onInput={(e) => props.onSetOverride(['style', 'cueExit', 'delay'], toNumber(e.currentTarget.value, effectiveValue(['style', 'cueExit', 'delay'])))} />
+          </OverrideRow>
+          <OverrideRow label="Duration (s)" path={['style', 'cueExit', 'duration']}>
+            <input type="number" step="0.05" min="0.01" value={effectiveValue(['style', 'cueExit', 'duration'])}
+              onInput={(e) => props.onSetOverride(['style', 'cueExit', 'duration'], toNumber(e.currentTarget.value, effectiveValue(['style', 'cueExit', 'duration'])))} />
+          </OverrideRow>
+        </Section>
+
         <p class="settingsNote">
           Check a field to pin it from this point on the timeline; leave it
           unchecked to keep following the global config (or an earlier

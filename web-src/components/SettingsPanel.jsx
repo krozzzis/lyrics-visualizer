@@ -229,6 +229,26 @@ export default function SettingsPanel(props) {
           </Row>
         </Section>
 
+        <Section title="Text exit (after cue ends)">
+          <Row label="Type">
+            <select value={config.style.cueExit.type}
+              onChange={(e) => setConfig('style', 'cueExit', 'type', e.currentTarget.value)}>
+              <option value="none">none</option>
+              <option value="opacity">opacity</option>
+              <option value="slide">slide</option>
+              <option value="scale">scale</option>
+            </select>
+          </Row>
+          <Row label="Delay (s)">
+            <input type="number" step="0.05" min="0" value={config.style.cueExit.delay}
+              onInput={(e) => setConfig('style', 'cueExit', 'delay', toNumber(e.currentTarget.value, config.style.cueExit.delay))} />
+          </Row>
+          <Row label="Duration (s)">
+            <input type="number" step="0.05" min="0.01" value={config.style.cueExit.duration}
+              onInput={(e) => setConfig('style', 'cueExit', 'duration', toNumber(e.currentTarget.value, config.style.cueExit.duration))} />
+          </Row>
+        </Section>
+
         <Section title="Timeline">
           <Row label="BPM (blank = off)">
             <input type="number" step="1" min="1" value={config.timeline.bpm ?? ''} placeholder="—"

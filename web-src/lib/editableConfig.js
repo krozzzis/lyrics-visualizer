@@ -33,7 +33,15 @@ export function buildEditablePayload(config) {
       showNextLine: config.layout.showNextLine,
       nextLineFrom: config.layout.nextLineFrom,
     },
-    style: { activeOpacity: config.style.activeOpacity, inactiveOpacity: config.style.inactiveOpacity },
+    style: {
+      activeOpacity: config.style.activeOpacity,
+      inactiveOpacity: config.style.inactiveOpacity,
+      cueExit: {
+        type: config.style.cueExit.type,
+        delay: config.style.cueExit.delay,
+        duration: config.style.cueExit.duration,
+      },
+    },
     timeline: {
       bpm: config.timeline.bpm,
       beatsPerBar: config.timeline.beatsPerBar,

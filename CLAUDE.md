@@ -5,8 +5,9 @@ horizontal line; the camera jumps to center the current word/line on each
 subtitle timestamp. Renders live in a browser (Solid.js) or offline to a
 video file via ffmpeg — both paths share the same layout/draw code
 (`src/scene.js`, `src/layout.js`, `src/camera.js`, `src/color.js`,
-`src/configMarkers.js`) so the preview and the rendered output are
-pixel-identical. See `README.md` for user-facing setup/config docs.
+`src/configMarkers.js`, `src/fade.js`) so the preview and the rendered
+output are pixel-identical. See `README.md` for user-facing setup/config
+docs.
 
 Config is not fully global: `camera`/`colors`/`style` can be locally
 overridden from a point in time onward via config markers

@@ -4,6 +4,7 @@ const {
 } = require('./camera');
 const { toCanvasFill } = require('./color');
 const { sortMarkers, resolveConfigAt } = require('./configMarkers');
+const { exitProgress, exitOffset } = require('./fade');
 
 // Precomputes everything that doesn't depend on the playback time t: layout
 // positions, camera keyframes, and the time-sorted marker list drawFrame
@@ -75,6 +76,9 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
   const viewMinX = cameraX - centerX - margin;
   const viewMaxX = cameraX + centerX + margin;
 
+  const cueExitCfg = resolvedNow.style && resolvedNow.style.cueExit;
+  const cueExitType = cueExitCfg && cueExitCfg.type;
+
   ctx.fillStyle = textFill;
   ctx.save();
   // Zoom around the frame center, on the same jump timeline as the pan,
@@ -88,12 +92,42 @@ function drawFrame(ctx, { width, height }, config, scene, t) {
     if (rowDelta < -1 || rowDelta > 1) continue;
     if (rowDelta === -1 && !showPrevLine) continue;
     if (rowDelta === 1 && !showNextLine) continue;
+    let opacity = word.cueIndex === activeCueIndex ? activeOpacity : inactiveOpacity;
+    let dx = 0;
+    let dy = 0;
+    let scale = 1;
+
+    // cueExit: fades this word fully out once its own cue has ended (plus
+    // delay), regardless of active/inactive state — this is what makes text
+    // actually leave the screen during a gap instead of sitting at
+    // activeOpacity until the next cue's jump fires.
+    if (cueExitType && cueExitType !== 'none') {
+      const cueEnd = layout.cues[word.cueIndex].end;
+      const progress = exitProgress(cueEnd, cueExitCfg.delay, cueExitCfg.duration, t);
+      if (progress >= 1) continue;
+      opacity *= (1 - progress);
+      const off = exitOffset(progress, cueExitType, config.font.size);
+      dx += off.dx;
+      dy += off.dy;
+      scale *= off.scale;
+    }
+
+    if (opacity <= 0) continue;
     const screenX = word.x - cameraX + centerX;
     const screenY = word.y - cameraY + centerY;
-    const opacity = word.cueIndex === activeCueIndex ? activeOpacity : inactiveOpacity;
-    if (opacity <= 0) continue;
     ctx.globalAlpha = opacity;
-    ctx.fillText(word.text, screenX, screenY);
+    if (dx !== 0 || dy !== 0 || scale !== 1) {
+      const wcx = screenX + word.width / 2 + dx;
+      const wcy = screenY + dy;
+      ctx.save();
+      ctx.translate(wcx, wcy);
+      ctx.scale(scale, scale);
+      ctx.translate(-wcx, -wcy);
+      ctx.fillText(word.text, screenX + dx, screenY + dy);
+      ctx.restore();
+    } else {
+      ctx.fillText(word.text, screenX, screenY);
+    }
   }
   ctx.restore();
   ctx.globalAlpha = 1;

@@ -96,6 +96,17 @@ style:
   # Opacity of the active vs. all other lines, for readability.
   activeOpacity: 1
   inactiveOpacity: 0.35
+  # Full disappearance of a cue's words after its own `end` timestamp, on
+  # top of (and independent from) the active/inactive opacity above — this
+  # is what makes text actually leave the screen instead of just sitting at
+  # activeOpacity forever once a cue is done (e.g. during a gap before the
+  # next cue's jump fires). 'none' (default) disables it — unchanged
+  # behavior. 'opacity' fades alpha to 0; 'slide' also drifts the text down
+  # as it fades; 'scale' also shrinks it toward nothing.
+  cueExit:
+    type: none # none | opacity | slide | scale
+    delay: 0.3 # seconds after cue.end before the exit animation starts
+    duration: 0.5 # seconds the exit animation takes to reach fully hidden
 
 timeline:
   # Browser-preview-only: beat grid on the bottom timeline. Unset/null bpm

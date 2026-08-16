@@ -46,6 +46,14 @@ const DEFAULTS = {
   style: {
     activeOpacity: 1,
     inactiveOpacity: 0.35,
+    // Full disappearance of a cue's words after its own `end` timestamp —
+    // independent of when the next cue's jump fires, so a cue doesn't just
+    // sit at activeOpacity forever during a gap with nothing after it.
+    cueExit: {
+      type: 'none', // 'none' | 'opacity' | 'slide' | 'scale'
+      delay: 0.3, // seconds after cue.end before the exit animation starts
+      duration: 0.5, // seconds the exit animation takes to reach fully hidden
+    },
   },
   timeline: {
     bpm: null, // null hides the beat grid in the browser preview
