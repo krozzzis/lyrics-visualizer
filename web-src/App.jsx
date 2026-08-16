@@ -21,7 +21,7 @@ export default function App() {
       fallback={<div class="loadingScreen">Failed to load: {error()}</div>}
     >
       <Show when={data()} fallback={<div class="loadingScreen">Loading…</div>}>
-        {(d) => <Player config={d().config} cues={d().cues} />}
+        {(d) => <Player config={d().config} cues={d().cues} configMarkers={d().configMarkers} />}
       </Show>
     </Show>
   );

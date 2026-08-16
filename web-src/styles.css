@@ -858,3 +858,25 @@ button {
   line-height: 1.5;
   color: var(--text-faint);
 }
+
+.markerOverrideRow {
+  flex-wrap: wrap;
+}
+
+.overrideToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.overrideToggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.closeMarkerPanel {
+  margin: 10px 14px 14px;
+  align-self: flex-start;
+}

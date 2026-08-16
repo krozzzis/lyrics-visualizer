@@ -7,6 +7,7 @@ import Stage, { drawFrame } from './components/Stage.jsx';
 import ControlsBar from './components/ControlsBar.jsx';
 import Timeline from './components/Timeline.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
+import MarkerPanel from './components/MarkerPanel.jsx';
 import { activeCueIndexAtTime, EPSILON as CUE_TIME_EPSILON } from './lib/cueIndex.js';
 import { createResizablePanel } from './lib/resizable.js';
 import { wordsFromText } from './lib/words.js';
@@ -25,6 +26,7 @@ function isTextEntry(el) {
 export default function Player(props) {
   const [cues, setCues] = createStore(props.cues);
   const [config, setConfig] = createStore(props.config);
+  const [markers, setMarkers] = createStore(props.configMarkers || []);
   const usingAudio = Boolean(props.config.audio);
 
   const [currentTime, setCurrentTime] = createSignal(0);
@@ -38,6 +40,7 @@ export default function Player(props) {
   const [linkResize, setLinkResize] = createSignal(false);
   const [selectedIndices, setSelectedIndices] = createSignal(new Set());
   let selectionAnchor = null; // last plain/ctrl-clicked index, for shift-range selects
+  const [selectedMarkerId, setSelectedMarkerId] = createSignal(null);
 
   const sidebarPanel = createResizablePanel('sidebar', {
     defaultSize: 300, min: 200, max: 520, axis: 'x',
@@ -271,6 +274,119 @@ export default function Player(props) {
     persistCues();
   }
 
+  // Config markers: points on the timeline (drawn as a dot below the cue
+  // blocks) where camera/colors/style locally override the global config
+  // from that point on — see src/configMarkers.js. Persisted immediately on
+  // every mutation, like cues, rather than requiring the settings panel's
+  // explicit Save step: each add/move/delete/override edit is already a
+  // single, deliberate, complete action, not a batch of unrelated tweaks.
+  async function persistMarkers() {
+    try {
+      const body = JSON.stringify({
+        markers: markers.map((m) => ({ id: m.id, time: m.time, overrides: m.overrides })),
+      });
+      const res = await fetch('/api/markers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to save marker edit:', err);
+    }
+  }
+
+  let markerIdCounter = 0;
+
+  // New markers start with empty overrides — not a snapshot of the current
+  // camera/colors/style — so later global settings edits keep affecting the
+  // timeline right up to the next field a marker actually touches. A
+  // snapshot would silently freeze every field at that instant, which reads
+  // as "settings stopped working" the next time someone tweaks the panel.
+  function addMarkerAtCursor() {
+    markerIdCounter += 1;
+    const id = `marker-${Date.now()}-${markerIdCounter}`;
+    const time = currentTime();
+    setMarkers([...markers, { id, time, overrides: {} }]);
+    setSelectedMarkerId(id);
+    persistMarkers();
+    return id;
+  }
+
+  function markerIndex(id) {
+    return markers.findIndex((m) => m.id === id);
+  }
+
+  // Continuous during a drag (see resizeCueEdge/moveCueTo above) — not
+  // persisted here so a drag doesn't flood the server with saves.
+  function moveMarkerTo(id, rawTime) {
+    const tl = config.timeline || {};
+    const t = snapEnabled() ? snapToGrid(rawTime, tl.bpm, tl.beatsPerBar, tl.gridOffset || 0) : rawTime;
+    const i = markerIndex(id);
+    if (i < 0) return;
+    setMarkers(i, 'time', Math.max(0, Math.min(duration(), t)));
+  }
+
+  function commitMarkerMove() {
+    persistMarkers();
+  }
+
+  // Direct numeric time entry from the marker panel — exact, unlike a
+  // pointer drag, so it deliberately skips the snap-to-grid a drag applies.
+  function setMarkerTime(id, rawTime) {
+    const i = markerIndex(id);
+    if (i < 0 || !Number.isFinite(rawTime)) return;
+    setMarkers(i, 'time', Math.max(0, Math.min(duration(), rawTime)));
+    persistMarkers();
+  }
+
+  function deleteMarker(id) {
+    const i = markerIndex(id);
+    if (i < 0) return;
+    // Clear the selection *before* removing the marker from the store: the
+    // marker panel reads markers[markerIndex(selectedMarkerId())] reactively,
+    // and Solid's store updates apply (and re-render dependents) synchronously
+    // per call — removing the marker first would momentarily leave the panel
+    // pointed at an id no longer in the array and crash on `undefined.id`.
+    if (selectedMarkerId() === id) setSelectedMarkerId(null);
+    setMarkers(markers.filter((m) => m.id !== id));
+    persistMarkers();
+  }
+
+  function selectMarker(id) {
+    setSelectedMarkerId(id);
+    if (id != null) clearSelection(); // marker and cue selection are mutually exclusive
+  }
+
+  // Sets (or clears, when value is undefined) one field inside a marker's
+  // overrides, at any depth — e.g. setMarkerOverride(id, ['camera', 'jumpDuration'], 0.4)
+  // or setMarkerOverride(id, ['camera', 'zoom', 'amount'], undefined) to stop
+  // overriding it and fall back to whatever the next-earlier marker (or the
+  // global config) says. Empty objects left behind by a clear are pruned so
+  // overrides never accumulates stale `{}` shells.
+  function deepSet(obj, path, value) {
+    const [key, ...rest] = path;
+    const next = { ...obj };
+    if (rest.length === 0) {
+      if (value === undefined) delete next[key];
+      else next[key] = value;
+      return next;
+    }
+    const child = deepSet(obj[key] || {}, rest, value);
+    if (Object.keys(child).length === 0) delete next[key];
+    else next[key] = child;
+    return next;
+  }
+
+  function setMarkerOverride(id, path, value) {
+    const i = markerIndex(id);
+    if (i < 0) return;
+    setMarkers(i, 'overrides', deepSet(markers[i].overrides || {}, path, value));
+    persistMarkers();
+  }
+
   const audioEl = new Audio();
   if (usingAudio) {
     audioEl.preload = 'auto';
@@ -355,7 +471,10 @@ export default function Player(props) {
         e.preventDefault();
         sliceAtCursor();
       } else if (e.code === 'Delete' || e.code === 'Backspace') {
-        if (selectedIndices().size > 0) {
+        if (selectedMarkerId() != null) {
+          e.preventDefault();
+          deleteMarker(selectedMarkerId());
+        } else if (selectedIndices().size > 0) {
           e.preventDefault();
           deleteSelectedCues();
         }
@@ -381,7 +500,7 @@ export default function Player(props) {
           showSettings={showSettings}
           onToggleSettings={() => setShowSettings((v) => !v)}
         />
-        <Stage config={config} cues={cues} onReady={setSceneRef} />
+        <Stage config={config} cues={cues} markers={markers} onReady={setSceneRef} />
         <div class="resizeHandleH" onPointerDown={timelinePanel.onHandlePointerDown} />
         <Timeline
           height={timelinePanel.size}
@@ -416,11 +535,38 @@ export default function Player(props) {
           onMoveCommit={commitCueEdit}
           selectedIndices={selectedIndices}
           onSelectCue={selectCue}
+          markers={markers}
+          onAddMarker={addMarkerAtCursor}
+          onMoveMarker={moveMarkerTo}
+          onMoveMarkerCommit={commitMarkerMove}
+          selectedMarkerId={selectedMarkerId}
+          onSelectMarker={selectMarker}
         />
       </div>
-      <Show when={showSettings()}>
+      {/* Marker overrides and global settings both live in the right-hand
+          panel slot; selecting a marker takes priority so its per-field
+          local overrides are never edited side-by-side with (and easily
+          confused for) the global config. */}
+      <Show
+        when={selectedMarkerId() != null}
+        fallback={(
+          <Show when={showSettings()}>
+            <div class="resizeHandleV" onPointerDown={settingsPanel.onHandlePointerDown} />
+            <SettingsPanel config={config} setConfig={setConfig} width={settingsPanel.size} />
+          </Show>
+        )}
+      >
         <div class="resizeHandleV" onPointerDown={settingsPanel.onHandlePointerDown} />
-        <SettingsPanel config={config} setConfig={setConfig} width={settingsPanel.size} />
+        <MarkerPanel
+          marker={markers[markerIndex(selectedMarkerId())]}
+          config={config}
+          markers={markers}
+          onSetOverride={(path, value) => setMarkerOverride(selectedMarkerId(), path, value)}
+          onSetTime={(t) => setMarkerTime(selectedMarkerId(), t)}
+          onDelete={() => deleteMarker(selectedMarkerId())}
+          onClose={() => setSelectedMarkerId(null)}
+          width={settingsPanel.size}
+        />
       </Show>
     </div>
   );

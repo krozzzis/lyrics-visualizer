@@ -26,6 +26,10 @@ const COLORS = {
   rulerTick: 'rgba(255,255,255,0.28)',
   rulerText: '#8b8fa0',
   rulerBarText: '#b9aeff',
+  markerDot: '#ffb74d',
+  markerDotEmpty: '#5a5d6b', // overrides is {} — placed but not actually changing anything yet
+  markerDotSelected: '#ffffff',
+  markerLine: 'rgba(255,183,77,0.35)',
 };
 
 // Cycled by each logical line's time-sorted position among grouped lines
@@ -156,6 +160,7 @@ export default function Timeline(props) {
     let startOffset = 0;
     let resizing = null; // { index, edge } while a resize drag is active
     let moving = null; // { index, offset, moved } while a move drag is active
+    let movingMarker = null; // { id, offset, moved } while a marker drag is active
 
     function onPointerDown(e) {
       const rect = viewportEl.getBoundingClientRect();
@@ -165,6 +170,13 @@ export default function Timeline(props) {
       if (hit) {
         resizing = hit;
         setHoverEdge(hit);
+        viewportEl.setPointerCapture(e.pointerId);
+        return;
+      }
+      const marker = markerAt(x, y);
+      if (marker) {
+        const t = scrollOffset() + x / pxPerSecond();
+        movingMarker = { id: marker.id, offset: t - marker.time, moved: false };
         viewportEl.setPointerCapture(e.pointerId);
         return;
       }
@@ -190,6 +202,17 @@ export default function Timeline(props) {
       if (resizing) {
         markInteracting();
         props.onResizeCue(resizing.index, resizing.edge, scrollOffset() + x / pxPerSecond());
+        return;
+      }
+      if (movingMarker) {
+        const t = scrollOffset() + x / pxPerSecond();
+        const current = props.markers.find((m) => m.id === movingMarker.id);
+        if (current && !movingMarker.moved
+          && Math.abs((t - movingMarker.offset - current.time) * pxPerSecond()) > DRAG_THRESHOLD) {
+          movingMarker.moved = true;
+        }
+        markInteracting();
+        props.onMoveMarker(movingMarker.id, t - movingMarker.offset);
         return;
       }
       if (moving) {
@@ -229,6 +252,13 @@ export default function Timeline(props) {
         props.onResizeCommit();
         return;
       }
+      if (movingMarker) {
+        const { id, moved } = movingMarker;
+        movingMarker = null;
+        props.onSelectMarker(id);
+        if (moved) props.onMoveMarkerCommit();
+        return;
+      }
       if (moving) {
         const { index, moved } = moving;
         moving = null;
@@ -248,6 +278,7 @@ export default function Timeline(props) {
         const t = scrollOffset() + x / pxPerSecond();
         const tl = props.config.timeline || {};
         props.onSelectCue(null);
+        props.onSelectMarker(null);
         props.onSeek(props.snapEnabled() ? snapToGrid(t, props.bpm(), tl.beatsPerBar, tl.gridOffset || 0) : t);
       } else {
         markInteracting();
@@ -409,17 +440,39 @@ export default function Timeline(props) {
   // silently drift apart.
   const GROUP_LINE_H = 4;
   const GROUP_LINE_GAP = 4; // space between the bottom of a block and its group line
+  const MARKER_ROW_H = 14; // config-marker dots, one level below the group-line row
+  const MARKER_ROW_GAP = 3;
+  const MARKER_HIT_PX = 7; // hit-test tolerance for grabbing a marker dot
 
   function blockGeometry() {
     const { height } = containerSize();
     const contentH = height - RULER_H;
     const waveH = contentH * WAVE_FRACTION;
     const blockY = RULER_H + waveH + 6;
-    const blockH = height - blockY - 6 - GROUP_LINE_GAP - GROUP_LINE_H;
+    const blockH = height - blockY - 6 - GROUP_LINE_GAP - GROUP_LINE_H - MARKER_ROW_GAP - MARKER_ROW_H;
     const groupLineY = blockY + blockH + GROUP_LINE_GAP;
+    const markerRowY = groupLineY + GROUP_LINE_H + MARKER_ROW_GAP;
     return {
-      waveH, blockY, blockH, groupLineY,
+      waveH, blockY, blockH, groupLineY, markerRowY,
     };
+  }
+
+  function markerScreenX(marker) {
+    return (marker.time - scrollOffset()) * pxPerSecond();
+  }
+
+  // Marker under viewport-relative (x, y), or null.
+  function markerAt(x, y) {
+    const { markerRowY } = blockGeometry();
+    const cy = markerRowY + MARKER_ROW_H / 2;
+    if (y < markerRowY - 4 || y > markerRowY + MARKER_ROW_H + 4) return null;
+    for (const marker of props.markers) {
+      const mx = markerScreenX(marker);
+      const dx = x - mx;
+      const dy = y - cy;
+      if (dx * dx + dy * dy <= MARKER_HIT_PX * MARKER_HIT_PX) return marker;
+    }
+    return null;
   }
 
   function cueScreenX(cue) {
@@ -565,6 +618,40 @@ export default function Timeline(props) {
       ctx.stroke();
     });
 
+    // Config markers: a dot one level below the group-line row (see
+    // blockGeometry) for each point where camera/colors/style locally
+    // override the global config from there on. A thin vertical guide line
+    // through the whole content area makes it easy to see which cue blocks
+    // a marker lands on.
+    const { markerRowY } = blockGeometry();
+    const markerCy = markerRowY + MARKER_ROW_H / 2;
+    const selectedMarkerId = props.selectedMarkerId ? props.selectedMarkerId() : null;
+    for (const marker of props.markers) {
+      if (marker.time < start || marker.time > end) continue;
+      const mx = markerScreenX(marker);
+      const hasOverrides = marker.overrides && Object.keys(marker.overrides).length > 0;
+      const selected = marker.id === selectedMarkerId;
+
+      ctx.strokeStyle = COLORS.markerLine;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(mx + 0.5, RULER_H);
+      ctx.lineTo(mx + 0.5, markerRowY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(mx, markerCy, selected ? 6 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = selected
+        ? COLORS.markerDotSelected
+        : (hasOverrides ? COLORS.markerDot : COLORS.markerDotEmpty);
+      ctx.fill();
+      if (selected) {
+        ctx.strokeStyle = COLORS.markerDot;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
     // Ruler: bar numbers when BPM is set (DAW convention — the grid is the
     // primary reference once there's tempo info), otherwise plain timecodes.
     ctx.fillStyle = COLORS.rulerBg;
@@ -644,6 +731,10 @@ export default function Timeline(props) {
     hoverEdge();
     props.cues.forEach((cue) => {
       void cue.start; void cue.end; void cue.text; void cue.lineId;
+    });
+    if (props.selectedMarkerId) props.selectedMarkerId();
+    props.markers.forEach((marker) => {
+      void marker.time; void marker.overrides;
     });
     draw();
   });
@@ -772,6 +863,14 @@ export default function Timeline(props) {
               title="Add a new cue block at the cursor position"
             >
               ➕
+            </button>
+            <button
+              type="button"
+              class="transportBtn"
+              onClick={props.onAddMarker}
+              title="Add a config marker at the cursor position — a point where camera/colors/style settings can locally override the global config"
+            >
+              🚩
             </button>
             <button
               type="button"

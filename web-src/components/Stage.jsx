@@ -7,11 +7,13 @@ const { prepareScene, drawFrame } = sceneMod;
 // calls — that shared code is what keeps this preview pixel-identical to
 // the ffmpeg render at the same t.
 //
-// props.config is a reactive Solid store: the settings panel can edit it
-// live. prepareScene() re-runs automatically whenever a field it actually
-// reads (font.*, layout.*, camera.anchor, word.splitMode) changes, since
-// Solid's store proxy tracks property access no matter how deep the call
-// stack is inside prepareScene/computeLayout/buildKeyframes.
+// props.config and props.markers are reactive Solid stores: the settings
+// panel edits config live, and the timeline's marker row edits markers
+// (add/move/delete/override). prepareScene() re-runs automatically whenever
+// a field it actually reads (font.*, layout.*, camera.anchor, word.splitMode,
+// every marker's time/overrides) changes, since Solid's store proxy tracks
+// property access no matter how deep the call stack is inside
+// prepareScene/computeLayout/buildKeyframes.
 export default function Stage(props) {
   let canvasEl;
   const [ctx, setCtx] = createSignal(null);
@@ -34,7 +36,7 @@ export default function Stage(props) {
   createEffect(() => {
     const c = ctx();
     if (!c) return;
-    const scene = prepareScene(c, props.cues, props.config);
+    const scene = prepareScene(c, props.cues, props.config, props.markers || []);
     props.onReady({ ctx: c, scene });
   });
 
