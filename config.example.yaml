@@ -122,6 +122,11 @@ style:
     delay: 0 # seconds after being superseded before the fade starts
     duration: 0.4 # seconds the fade takes to settle at inactiveOpacity
     wordStagger: 0.04 # seconds between each word's fade start (granularity: word)
+    # In stacked mode, layout.showPrevLine only keeps ONE row above the
+    # active one on screen at all — a row still mid-fade gets hard-cut the
+    # instant a second new line takes over, not eased out. Keep
+    # delay+duration comfortably shorter than your typical line spacing to
+    # avoid a visible pop.
 
 timeline:
   # Browser-preview-only: beat grid on the bottom timeline. Unset/null bpm
