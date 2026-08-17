@@ -2,12 +2,13 @@
 
 Lyric video visualizer: subtitle lines flow word-by-word along one long
 horizontal line; the camera jumps to center the current word/line on each
-subtitle timestamp. Renders live in a browser (Solid.js) or offline to a
-video file via ffmpeg — both paths share the same layout/draw code
-(`src/scene.js`, `src/layout.js`, `src/camera.js`, `src/color.js`,
-`src/configMarkers.js`, `src/fade.js`) so the preview and the rendered
-output are pixel-identical. See `README.md` for user-facing setup/config
-docs.
+subtitle timestamp. Renders live in a browser (Solid.js) — either plain, via
+`bin/serve.js`, or packaged as an Electron desktop app (`electron/`) that
+embeds the same server in-process — or offline to a video file via ffmpeg.
+All paths share the same layout/draw code (`src/scene.js`, `src/layout.js`,
+`src/camera.js`, `src/color.js`, `src/configMarkers.js`, `src/fade.js`) so
+the browser preview, the Electron window, and the rendered output are
+pixel-identical. See `README.md` for user-facing setup/config docs.
 
 Config is not fully global: `camera`/`colors`/`style`/`layout` can be
 locally overridden from a point in time onward via config markers
@@ -32,17 +33,33 @@ markerable, it must go through this resolver, not be read straight off
 - `bin/render.js` — CLI: `dump` (print parsed cues), `frame` (single PNG),
   `video` (full ffmpeg render). Uses `@napi-rs/canvas` for a headless
   CanvasRenderingContext2D.
-- `bin/serve.js` — dev server: serves `web/dist`, `GET /api/data` (config +
-  cues + config markers for the browser), `POST /api/config` (persist
-  settings-panel edits to the YAML file this server was started with,
-  autosaved on a debounce — no explicit Save step), `POST /api/markers`
-  (persist config-marker add/move/delete/override edits to
-  `config-markers.json`, immediately — like `POST /api/cues`),
+- `src/server.js` — `createServer(configPath)`: a pure factory building the
+  express app for one project. No `listen()`, no `process.exit()` — the
+  caller owns the HTTP server's lifecycle. Routes: serves `web/dist`,
+  `GET /api/data` (config + cues + config markers for the browser),
+  `POST /api/config` (persist settings-panel edits to the YAML file this
+  server was started with, autosaved on a debounce — no explicit Save step),
+  `POST /api/markers` (persist config-marker add/move/delete/override edits
+  to `config-markers.json`, immediately — like `POST /api/cues`),
   `POST /api/render` + `GET /api/render/status` +
-  `GET /api/render/download` (server-side render triggered from the browser,
-  sharing `src/render.js` with the CLI's `video` command).
+  `GET /api/render/download` (server-side render, sharing `src/render.js`
+  with the CLI's `video` command). Two callers: `bin/serve.js` (thin CLI
+  wrapper, one server for the process's life) and `electron/main.js` (tears
+  a server down and builds a fresh one, on a fresh local port, on every
+  project switch — see below).
+- `bin/serve.js` — thin CLI wrapper: `createServer` + `app.listen(port)`.
+- `electron/` — desktop shell (`main.js` + `preload.js`). Embeds
+  `src/server.js` directly, in-process, not as a subprocess; native
+  File/Edit/View/Window/Help menu drives New/Open Project and Render Video.
+  Tracks and force-closes open sockets on project switch (`http.Server#close`
+  alone deadlocks on the window's own still-open keep-alive connection —
+  see the comment above `openSockets` in `electron/main.js`). Packaged via
+  Nix (`flake.nix`), not `electron-builder` — see README's "Desktop app
+  (Electron)" section for the native/cross-platform build targets and their
+  caveats (no ffmpeg bundled for cross builds, macOS builds unsigned).
 - `web-src/` — Solid.js browser player, built by Vite into `web/dist`
-  (gitignored; `bin/serve.js` refuses to start without it).
+  (gitignored; both `bin/serve.js` and `electron/main.js` require it —
+  `createServer` throws if it's missing).
 - Config precedence: `config.yaml` on disk is the source of truth, but the
   browser's settings-panel store can have live unsaved edits. `/api/render`
   merges those onto the server's in-memory config for that render only,
@@ -60,12 +77,28 @@ node bin/serve.js -c config.yaml -p 8080   # dev server: browser preview + rende
 npm run dev              # vite dev server with HMR; proxies /api and /assets to :8080
                           # (needs bin/serve.js already running on :8080)
 node bin/render.js video -c config.yaml -o out.mp4   # CLI render, no browser involved
+npm run electron         # desktop app (electron/main.js), needs npm run build first
+nix build .#lyrics-visualizer   # packaged app for this OS; also
+                                 # .#lyrics-visualizer-{windows-x64,macos-x64,macos-arm64}
+scripts/install-git-hooks.sh   # one-time per clone: see npmDepsHash note below
 ```
+
+`flake.nix`'s `appResources` derivation pins `npmDepsHash` to
+`package-lock.json`'s contents (required for a sandboxed, network-free
+`nix build`) — editing dependencies makes it stale and `nix build` fail with
+a hash-mismatch error until it's regenerated. `scripts/pre-commit` (activated
+once per clone via `scripts/install-git-hooks.sh`) does this automatically
+whenever `package-lock.json` is part of a commit; run
+`scripts/update-npm-deps-hash.sh` directly (inside `nix develop`) to refresh
+it without committing.
 
 There's no test suite. "Verified" in this codebase means: built, run against
 the real dev server, and exercised through an actual browser (Playwright) or
 `curl` — not just "it typechecks" or "the diff looks right". A UI change
-that was only read, not clicked through, is not verified.
+that was only read, not clicked through, is not verified. For `electron/`
+changes, that means actually launching the desktop app (the `run-electron`
+skill drives this) — a browser-only check doesn't exercise the menu, window
+lifecycle, or project-switch code paths that live there.
 
 ## Workflow
 

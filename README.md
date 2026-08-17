@@ -184,8 +184,11 @@ npm run electron   # opens the app
 - **File > Render Video** — same server-side render as the browser's Render
   button. No keyboard shortcut on purpose: `Ctrl/Cmd+R`/`+Shift+R` are
   already View > Reload/Force Reload's default accelerators.
+- **File > Show Project Folder** — reveals the current project's
+  `config.yaml` in the OS file manager.
 - The rest of File/Edit/View/Window/Help are standard app menu items
-  (reload, zoom, dev tools, undo/redo/cut/copy/paste in text fields, quit).
+  (reload, zoom, dev tools, undo/redo/cut/copy/paste in text fields, quit),
+  plus a basic Help > About dialog.
 
 The app remembers your last-opened project (`config.yaml`'s path, in
 Electron's per-OS userData dir) and reopens straight to it next launch.

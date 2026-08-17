@@ -31,7 +31,7 @@
           pname = "lyrics-visualizer-resources";
           inherit version;
           src = ./.;
-          npmDepsHash = "sha256-VE0xtR9OqhLBauadCGckeHCySjLfgtB5qcLGoXSA3jU=";
+          npmDepsHash = "sha256-MN5BqizQgW0nYeHXiEHVGV4ZIjFLQeIpLqiN+4NmKiE=";
 
           # electron's own postinstall (node_modules/electron/install.js)
           # otherwise tries to download the Electron binary from GitHub the

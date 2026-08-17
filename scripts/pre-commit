@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Installed into .git/hooks/pre-commit by scripts/install-git-hooks.sh.
+# Whenever package-lock.json is part of the commit, regenerates flake.nix's
+# npmDepsHash to match and folds that edit into the same commit — so `nix
+# build` never breaks on a stale hash after a dependency change.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+if git diff --cached --name-only | grep -qx 'package-lock.json'; then
+  if command -v nix >/dev/null 2>&1; then
+    "$repo_root/scripts/update-npm-deps-hash.sh"
+    git add "$repo_root/flake.nix"
+  else
+    echo "warning: package-lock.json changed but 'nix' isn't on PATH — flake.nix's npmDepsHash was NOT updated. Run scripts/update-npm-deps-hash.sh manually (inside 'nix develop') before building." >&2
+  fi
+fi
