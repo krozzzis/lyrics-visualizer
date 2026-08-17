@@ -8,10 +8,10 @@ import svgFastForward from '@material-symbols/svg-400/outlined/fast_forward.svg?
 import svgFastRewind from '@material-symbols/svg-400/outlined/fast_rewind.svg?raw';
 import svgFitScreen from '@material-symbols/svg-400/outlined/fit_screen.svg?raw';
 import svgFlag from '@material-symbols/svg-400/outlined/flag.svg?raw';
-import svgGridGuides from '@material-symbols/svg-400/outlined/grid_guides.svg?raw';
 import svgGroup from '@material-symbols/svg-400/outlined/group.svg?raw';
 import svgLightMode from '@material-symbols/svg-400/outlined/light_mode.svg?raw';
 import svgLink from '@material-symbols/svg-400/outlined/link.svg?raw';
+import svgMagnet from '@material-symbols/svg-400/outlined/nest_cam_magnet_mount.svg?raw';
 import svgMovie from '@material-symbols/svg-400/outlined/movie.svg?raw';
 import svgPause from '@material-symbols/svg-400/outlined/pause.svg?raw';
 import svgPlayArrow from '@material-symbols/svg-400/outlined/play_arrow.svg?raw';
@@ -34,10 +34,10 @@ const ICONS = {
   fast_rewind: svgFastRewind,
   fit_screen: svgFitScreen,
   flag: svgFlag,
-  grid_guides: svgGridGuides,
   group: svgGroup,
   light_mode: svgLightMode,
   link: svgLink,
+  magnet: svgMagnet,
   movie: svgMovie,
   pause: svgPause,
   play_arrow: svgPlayArrow,
