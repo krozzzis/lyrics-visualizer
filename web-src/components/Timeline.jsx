@@ -8,8 +8,13 @@ import { snapToGrid } from '../lib/snap.js';
 import { formatClock } from '../lib/format.js';
 import PlayPauseButton from './PlayPauseButton.jsx';
 import Icon from './Icon.jsx';
+import { theme } from '../lib/theme.js';
 
-const COLORS = {
+// Canvas drawing can't read CSS custom properties, so the timeline's palette
+// is duplicated here per theme (M3 dark/light tonal roles) rather than
+// tokenized in styles.css — kept in sync with the --md-* values there by
+// hand. Picked per-frame in draw() via palette(), below.
+const COLORS_DARK = {
   waveformPlayed: '#9781ff',
   waveformUnplayed: '#454857',
   barLine: 'rgba(255,255,255,0.24)',
@@ -32,6 +37,34 @@ const COLORS = {
   markerDotSelected: '#ffffff',
   markerLine: 'rgba(255,183,77,0.35)',
 };
+
+const COLORS_LIGHT = {
+  waveformPlayed: '#6750a4',
+  waveformUnplayed: '#cac4d0',
+  barLine: 'rgba(0,0,0,0.24)',
+  beatLine: 'rgba(0,0,0,0.09)',
+  blockFill: '#e6e0e9',
+  blockBorder: '#cac4d0',
+  blockFillActive: '#6750a4',
+  blockSelectedOutline: '#1c1b1f',
+  resizeEdgeHighlight: '#b26a00',
+  blockText: '#49454f',
+  blockTextActive: '#ffffff',
+  playhead: '#1c1b1f',
+  playheadHandle: '#6750a4',
+  rulerBg: 'rgba(0,0,0,0.03)',
+  rulerTick: 'rgba(0,0,0,0.28)',
+  rulerText: '#49454f',
+  rulerBarText: '#5b4494',
+  markerDot: '#c56a00',
+  markerDotEmpty: '#a8a4ae', // overrides is {} — placed but not actually changing anything yet
+  markerDotSelected: '#1c1b1f',
+  markerLine: 'rgba(197,106,0,0.35)',
+};
+
+function palette() {
+  return theme() === 'light' ? COLORS_LIGHT : COLORS_DARK;
+}
 
 // Cycled by each logical line's time-sorted position among grouped lines
 // (see src/lines.js), so adjacent groups never share a color even when
@@ -497,6 +530,7 @@ export default function Timeline(props) {
 
   function draw() {
     if (!canvasEl) return;
+    const COLORS = palette();
     const { width, height } = containerSize();
     if (width <= 0 || height <= 0) return;
 
@@ -725,6 +759,7 @@ export default function Timeline(props) {
     props.activeIndex();
     props.selectedIndices();
     props.bpm();
+    theme();
     containerSize();
     pxPerSecond();
     scrollOffset();

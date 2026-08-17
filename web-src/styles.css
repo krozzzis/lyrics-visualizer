@@ -1,20 +1,167 @@
+/* ==========================================================================
+   Material 3 ("Material You") design tokens — baseline scheme, seed #6750A4.
+   :root holds the light palette; [data-theme="dark"] (set by lib/theme.js,
+   with an inline FOUC-guard in index.html setting the same attribute before
+   first paint) overrides it. The prefers-color-scheme block is a fallback
+   for the sliver of time before that JS runs / if it's ever unavailable.
+   ========================================================================== */
+
 :root {
-  --bg: #0d0e11;
-  --panel: #16171d;
-  --panel-alt: #1b1d24;
-  --border: #292b33;
-  --text: #eceef2;
-  --text-dim: #8b8fa0;
-  --text-faint: #5c606e;
-  --accent: #7c5cff;
-  --accent-strong: #9781ff;
-  --accent-dim: rgba(124, 92, 255, 0.16);
-  --accent-text: #ffffff;
-  --radius-lg: 14px;
-  --radius-md: 10px;
-  --radius-sm: 7px;
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-  --font: -apple-system, "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+  /* ---- key colors / on-colors ---- */
+  --md-primary: #6750a4;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #eaddff;
+  --md-on-primary-container: #21005d;
+
+  --md-secondary: #625b71;
+  --md-on-secondary: #ffffff;
+  --md-secondary-container: #e8def8;
+  --md-on-secondary-container: #1d192b;
+
+  --md-tertiary: #7d5260;
+  --md-on-tertiary: #ffffff;
+  --md-tertiary-container: #ffd8e4;
+  --md-on-tertiary-container: #31111d;
+
+  --md-error: #b3261e;
+  --md-on-error: #ffffff;
+  --md-error-container: #f9dedc;
+  --md-on-error-container: #410e0b;
+
+  /* not part of the official M3 baseline roles, but the same tonal-pair
+     convention extended for a semantic this app needs (render succeeded) */
+  --md-success: #1b6c2f;
+  --md-on-success: #ffffff;
+
+  /* ---- surfaces ---- */
+  --md-surface-dim: #ded8e1;
+  --md-surface: #fffbfe;
+  --md-surface-bright: #fffbfe;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f7f2fa;
+  --md-surface-container: #f3edf7;
+  --md-surface-container-high: #ece6f0;
+  --md-surface-container-highest: #e6e0e9;
+  --md-on-surface: #1c1b1f;
+  --md-on-surface-variant: #49454f;
+  --md-outline: #79747e;
+  --md-outline-variant: #cac4d0;
+  --md-shadow: #000000;
+
+  --md-inverse-surface: #313033;
+  --md-inverse-on-surface: #f4eff4;
+  --md-inverse-primary: #d0bcff;
+
+  color-scheme: light;
+
+  /* ---- shape scale ---- */
+  --shape-xs: 4px;
+  --shape-sm: 8px;
+  --shape-md: 12px;
+  --shape-lg: 16px;
+  --shape-full: 999px;
+
+  /* kept for the handful of pre-existing call sites that haven't been
+     migrated to the named --shape-* tokens above */
+  --radius-lg: var(--shape-lg);
+  --radius-md: var(--shape-md);
+  --radius-sm: var(--shape-sm);
+
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --elevation-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --shadow: var(--elevation-2);
+
+  --font: "Roboto", -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --md-primary: #d0bcff;
+    --md-on-primary: #381e72;
+    --md-primary-container: #4f378b;
+    --md-on-primary-container: #eaddff;
+
+    --md-secondary: #ccc2dc;
+    --md-on-secondary: #332d41;
+    --md-secondary-container: #4a4458;
+    --md-on-secondary-container: #e8def8;
+
+    --md-tertiary: #efb8c8;
+    --md-on-tertiary: #492532;
+    --md-tertiary-container: #633b48;
+    --md-on-tertiary-container: #ffd8e4;
+
+    --md-error: #f2b8b5;
+    --md-on-error: #601410;
+    --md-error-container: #8c1d18;
+    --md-on-error-container: #f9dedc;
+
+    --md-success: #8dd9a0;
+    --md-on-success: #0a3d16;
+
+    --md-surface-dim: #141218;
+    --md-surface: #1c1b1f;
+    --md-surface-bright: #3b383e;
+    --md-surface-container-lowest: #0f0d13;
+    --md-surface-container-low: #1d1b20;
+    --md-surface-container: #211f26;
+    --md-surface-container-high: #2b2930;
+    --md-surface-container-highest: #36343b;
+    --md-on-surface: #e6e1e5;
+    --md-on-surface-variant: #cac4d0;
+    --md-outline: #938f99;
+    --md-outline-variant: #49454f;
+
+    --md-inverse-surface: #e6e1e5;
+    --md-inverse-on-surface: #313033;
+    --md-inverse-primary: #6750a4;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --md-primary: #d0bcff;
+  --md-on-primary: #381e72;
+  --md-primary-container: #4f378b;
+  --md-on-primary-container: #eaddff;
+
+  --md-secondary: #ccc2dc;
+  --md-on-secondary: #332d41;
+  --md-secondary-container: #4a4458;
+  --md-on-secondary-container: #e8def8;
+
+  --md-tertiary: #efb8c8;
+  --md-on-tertiary: #492532;
+  --md-tertiary-container: #633b48;
+  --md-on-tertiary-container: #ffd8e4;
+
+  --md-error: #f2b8b5;
+  --md-on-error: #601410;
+  --md-error-container: #8c1d18;
+  --md-on-error-container: #f9dedc;
+
+  --md-success: #8dd9a0;
+  --md-on-success: #0a3d16;
+
+  --md-surface-dim: #141218;
+  --md-surface: #1c1b1f;
+  --md-surface-bright: #3b383e;
+  --md-surface-container-lowest: #0f0d13;
+  --md-surface-container-low: #1d1b20;
+  --md-surface-container: #211f26;
+  --md-surface-container-high: #2b2930;
+  --md-surface-container-highest: #36343b;
+  --md-on-surface: #e6e1e5;
+  --md-on-surface-variant: #cac4d0;
+  --md-outline: #938f99;
+  --md-outline-variant: #49454f;
+
+  --md-inverse-surface: #e6e1e5;
+  --md-inverse-on-surface: #313033;
+  --md-inverse-primary: #6750a4;
+
+  color-scheme: dark;
 }
 
 * {
@@ -43,17 +190,18 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
   font: 13px/1.4 var(--font);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* ---------- Scrollbars ---------- */
 
 :root {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--md-outline-variant) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -66,13 +214,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--border);
-  border-radius: 6px;
-  border: 3px solid var(--panel);
+  background-color: var(--md-outline-variant);
+  border-radius: var(--shape-full);
+  border: 3px solid var(--md-surface-container-low);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--text-faint);
+  background-color: var(--md-outline);
 }
 
 ::-webkit-scrollbar-corner {
@@ -111,7 +259,7 @@ button {
 .resizeHandleV:active,
 .resizeHandleH:hover,
 .resizeHandleH:active {
-  background: var(--accent-dim);
+  background: color-mix(in srgb, var(--md-primary) 20%, transparent);
 }
 
 .loadingScreen {
@@ -119,7 +267,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-dim);
+  color: var(--md-on-surface-variant);
   font-size: 14px;
 }
 
@@ -129,19 +277,51 @@ button {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
+  background: var(--md-surface-container-low);
+  border-right: 1px solid var(--md-outline-variant);
 }
 
 #sidebarHeader {
-  padding: 16px 16px 12px;
+  padding: 12px 10px 12px 16px;
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.02em;
-  color: var(--text-dim);
+  color: var(--md-on-surface-variant);
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--md-outline-variant);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.themeToggleBtn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--shape-full);
+  border: none;
+  background: transparent;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.themeToggleBtn:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+  color: var(--md-on-surface);
+}
+
+.themeToggleBtn:active {
+  background: color-mix(in srgb, var(--md-on-surface) 12%, transparent);
+}
+
+.themeToggleBtn .mdIcon {
+  width: 16px;
+  height: 16px;
 }
 
 #cueList {
@@ -154,55 +334,57 @@ button {
 
 #cueList li {
   padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--shape-sm);
   cursor: pointer;
   display: flex;
   gap: 10px;
   align-items: baseline;
   border-left: 3px solid transparent;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
 #cueList li:hover {
-  background: var(--panel-alt);
+  background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
 }
 
 #cueList li.active {
-  background: var(--accent-dim);
-  border-left-color: var(--accent);
+  background: var(--md-secondary-container);
+  border-left-color: var(--md-primary);
 }
 
 #cueList li.active .cueText {
-  color: var(--text);
+  color: var(--md-on-secondary-container);
   font-weight: 600;
 }
 
 .cueTime {
-  color: var(--text-faint);
+  color: var(--md-on-surface-variant);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   min-width: 3.6em;
+  opacity: 0.75;
 }
 
 #cueList li.active .cueTime {
-  color: var(--accent-strong);
+  color: var(--md-on-secondary-container);
+  opacity: 1;
 }
 
 .cueText {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-dim);
+  color: var(--md-on-surface-variant);
 }
 
 .cueTextEdit {
   flex: 1;
   min-width: 0;
-  background: var(--panel-alt);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  color: var(--text);
+  background: var(--md-surface-container-highest);
+  border: 1px solid var(--md-primary);
+  border-radius: var(--shape-xs);
+  color: var(--md-on-surface);
   font: inherit;
   padding: 1px 5px;
 }
@@ -230,28 +412,27 @@ button {
   align-items: center;
   gap: 16px;
   padding: 0 20px;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel);
+  border-bottom: 1px solid var(--md-outline-variant);
+  background: var(--md-surface-container-low);
 }
 
 .playBtn {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--accent-text);
+  border-radius: var(--shape-full);
+  border: none;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.12s ease, transform 0.08s ease;
+  transition: background-color 0.12s ease, transform 0.08s ease;
 }
 
 .playBtn:hover {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--md-primary) 92%, var(--md-on-primary));
 }
 
 .playBtn:active {
@@ -265,7 +446,7 @@ button {
 
 .timeDisplay {
   font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
+  color: var(--md-on-surface-variant);
   font-size: 13px;
   min-width: 9em;
 }
@@ -278,36 +459,38 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-faint);
+  color: var(--md-on-surface-variant);
   font-size: 12px;
 }
 
 .seekForm input[type="number"] {
   width: 5.5em;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--md-outline);
+  color: var(--md-on-surface);
+  border-radius: var(--shape-xs);
   padding: 5px 8px;
   font: inherit;
 }
 
 .seekForm input[type="number"]:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 4px 7px;
 }
 
 .smallBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  border-radius: var(--radius-sm);
-  padding: 5px 10px;
+  background: var(--md-surface-container-highest);
+  border: none;
+  color: var(--md-on-surface-variant);
+  border-radius: var(--shape-full);
+  padding: 5px 12px;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .smallBtn .mdIcon {
@@ -316,18 +499,17 @@ button {
 }
 
 .smallBtn:hover {
-  background: var(--border);
-  color: var(--text);
+  background: color-mix(in srgb, var(--md-surface-container-highest) 92%, var(--md-on-surface-variant));
+  color: var(--md-on-surface);
 }
 
 .smallBtn.active {
-  background: var(--accent-dim);
-  border-color: var(--accent);
-  color: var(--accent-strong);
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
 }
 
 .smallBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
 }
 
@@ -339,12 +521,17 @@ button {
 
 .renderDownload {
   text-decoration: none;
-  color: #7de3a0;
-  border-color: #7de3a0;
+  color: var(--md-on-success);
+  background: var(--md-success);
+}
+
+.renderDownload:hover {
+  background: color-mix(in srgb, var(--md-success) 92%, var(--md-on-success));
+  color: var(--md-on-success);
 }
 
 .renderError {
-  color: #ff8080;
+  color: var(--md-error);
   font-size: 12px;
   max-width: 22em;
   overflow: hidden;
@@ -353,7 +540,7 @@ button {
 }
 
 .renderSavedPath {
-  color: #9297a3;
+  color: var(--md-on-surface-variant);
   font-size: 12px;
   max-width: 22em;
   overflow: hidden;
@@ -375,15 +562,15 @@ button {
 #canvas {
   max-width: 100%;
   max-height: 100%;
-  border-radius: var(--radius-md);
+  border-radius: var(--shape-lg);
   box-shadow: var(--shadow);
   /* Checkerboard so a transparent config background is visible in preview;
      purely cosmetic — the exported frames/video are unaffected. */
   background-image:
-    linear-gradient(45deg, #2a2c34 25%, transparent 25%),
-    linear-gradient(-45deg, #2a2c34 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #2a2c34 75%),
-    linear-gradient(-45deg, transparent 75%, #2a2c34 75%);
+    linear-gradient(45deg, var(--md-surface-container-high) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--md-surface-container-high) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--md-surface-container-high) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--md-surface-container-high) 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
@@ -392,8 +579,8 @@ button {
 
 #timeline {
   flex-shrink: 0;
-  background: var(--panel);
-  border-top: 1px solid var(--border);
+  background: var(--md-surface-container-low);
+  border-top: 1px solid var(--md-outline-variant);
   display: flex;
   flex-direction: column;
 }
@@ -406,8 +593,8 @@ button {
   align-items: center;
   gap: 14px;
   padding: 0 14px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-dim);
+  border-bottom: 1px solid var(--md-outline-variant);
+  color: var(--md-on-surface-variant);
   font-size: 12px;
 }
 
@@ -444,17 +631,17 @@ button {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--panel-alt);
-  color: var(--text-dim);
+  border-radius: var(--shape-full);
+  border: none;
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface-variant);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   line-height: 1;
-  transition: background 0.12s ease, transform 0.08s ease;
+  transition: background-color 0.12s ease, transform 0.08s ease;
 }
 
 .transportBtn:active {
@@ -462,14 +649,13 @@ button {
 }
 
 .transportBtn:hover {
-  background: var(--border);
-  color: var(--text);
+  background: color-mix(in srgb, var(--md-surface-container-highest) 92%, var(--md-on-surface-variant));
+  color: var(--md-on-surface);
 }
 
 .transportBtn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
 }
 
 .transportBtn .mdIcon {
@@ -479,7 +665,7 @@ button {
 
 .transportBtn.textBtn {
   width: auto;
-  padding: 0 10px;
+  padding: 0 12px;
   gap: 5px;
   font-size: 12px;
 }
@@ -490,20 +676,20 @@ button {
 }
 
 .transportBtn:disabled {
-  opacity: 0.35;
+  opacity: 0.38;
   cursor: default;
 }
 
 .transportBtn:disabled:hover {
-  background: var(--panel-alt);
-  color: var(--text-dim);
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface-variant);
 }
 
 .bpmControl {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-faint);
+  color: var(--md-on-surface-variant);
   flex-shrink: 0;
 }
 
@@ -523,17 +709,17 @@ button {
 
 .barSizeBtn {
   height: 32px;
-  padding: 0 8px;
+  padding: 0 10px;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--panel-alt);
-  color: var(--text-dim);
+  border-radius: var(--shape-full);
+  border: none;
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface-variant);
   cursor: pointer;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  transition: background 0.12s ease, transform 0.08s ease;
+  transition: background-color 0.12s ease, transform 0.08s ease;
 }
 
 .barSizeBtn:active {
@@ -541,23 +727,22 @@ button {
 }
 
 .barSizeBtn:hover {
-  background: var(--border);
-  color: var(--text);
+  background: color-mix(in srgb, var(--md-surface-container-highest) 92%, var(--md-on-surface-variant));
+  color: var(--md-on-surface);
 }
 
 .barSizeBtn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
 }
 
 .bpmControl input[type="number"] {
   width: 4.5em;
   flex-shrink: 0;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--md-outline);
+  color: var(--md-on-surface);
+  border-radius: var(--shape-xs);
   padding: 3px 7px;
   font: inherit;
   font-variant-numeric: tabular-nums;
@@ -565,7 +750,9 @@ button {
 
 .bpmControl input[type="number"]:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 2px 6px;
 }
 
 .zoomControls {
@@ -579,20 +766,21 @@ button {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--panel-alt);
-  color: var(--text-dim);
+  border-radius: var(--shape-full);
+  border: none;
+  background: var(--md-surface-container-highest);
+  color: var(--md-on-surface-variant);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .zoomControls button:hover {
-  background: var(--border);
-  color: var(--text);
+  background: color-mix(in srgb, var(--md-surface-container-highest) 92%, var(--md-on-surface-variant));
+  color: var(--md-on-surface);
 }
 
 .zoomControls button .mdIcon {
@@ -602,7 +790,7 @@ button {
 
 .zoomControls .fitBtn {
   width: auto;
-  padding: 0 8px;
+  padding: 0 10px;
   gap: 4px;
   font-size: 12px;
 }
@@ -621,8 +809,8 @@ button {
   align-items: center;
   gap: 10px;
   padding: 14px 0 10px;
-  border-right: 1px solid var(--border);
-  background: var(--panel-alt);
+  border-right: 1px solid var(--md-outline-variant);
+  background: var(--md-surface-container);
 }
 
 .faderTrackWrap {
@@ -632,7 +820,10 @@ button {
   min-height: 0;
 }
 
-/* the slot the cap rides in — a recessed groove down the middle */
+/* the slot the cap rides in — a recessed groove down the middle. Left
+   intentionally near-black/metallic (theme-invariant, skeuomorphic) rather
+   than tokenized: it reads as a physical inset regardless of surface color
+   behind it, in both themes. */
 .faderGroove {
   position: absolute;
   top: 0;
@@ -641,7 +832,7 @@ button {
   width: 8px;
   transform: translateX(-50%);
   background: linear-gradient(90deg, #050506, #24262f 45%, #050506);
-  border-radius: 3px;
+  border-radius: var(--shape-xs);
   box-shadow: inset 0 0 0 1px #050506;
   pointer-events: none;
 }
@@ -656,7 +847,7 @@ button {
   width: 36px;
   height: 20px;
   transform: translate(-50%, -50%);
-  border-radius: 4px;
+  border-radius: var(--shape-xs);
   background:
     repeating-linear-gradient(
       0deg,
@@ -696,21 +887,22 @@ button {
   width: 26px;
   height: 22px;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text-faint);
+  border-radius: var(--shape-full);
+  border: none;
+  background: var(--md-surface-container-low);
+  color: var(--md-on-surface-variant);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .muteBtn:hover {
-  background: var(--border);
-  color: var(--text);
+  background: color-mix(in srgb, var(--md-surface-container-low) 88%, var(--md-on-surface-variant));
+  color: var(--md-on-surface);
 }
 
 .muteBtn .mdIcon {
@@ -719,9 +911,8 @@ button {
 }
 
 .muteBtn.active {
-  background: #ff8080;
-  border-color: #ff8080;
-  color: #2a0d0d;
+  background: var(--md-error-container);
+  color: var(--md-on-error-container);
 }
 
 #timelineMain {
@@ -756,11 +947,11 @@ button {
 .blockTextEdit {
   position: absolute;
   box-sizing: border-box;
-  background: var(--panel);
-  border: 1px solid var(--accent);
-  border-radius: 5px;
-  color: var(--text);
-  font: 11px -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--md-surface-container-highest);
+  border: 1px solid var(--md-primary);
+  border-radius: var(--shape-xs);
+  color: var(--md-on-surface);
+  font: 11px "Roboto", -apple-system, "Segoe UI", sans-serif;
   padding: 0 6px;
   z-index: 2;
 }
@@ -773,8 +964,8 @@ button {
   height: 12px;
   flex-shrink: 0;
   position: relative;
-  background: var(--panel-alt);
-  border-top: 1px solid var(--border);
+  background: var(--md-surface-container);
+  border-top: 1px solid var(--md-outline-variant);
 }
 
 #timelineScrollbarThumb {
@@ -782,13 +973,13 @@ button {
   top: 2px;
   left: 0;
   height: 8px;
-  border-radius: 4px;
-  background: var(--border);
+  border-radius: var(--shape-full);
+  background: var(--md-outline-variant);
   cursor: grab;
 }
 
 #timelineScrollbarThumb:hover {
-  background: var(--text-faint);
+  background: var(--md-outline);
 }
 
 #timelineScrollbarThumb:active {
@@ -806,8 +997,8 @@ button {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
+  background: var(--md-surface-container-low);
+  border-left: 1px solid var(--md-outline-variant);
   overflow: hidden;
 }
 
@@ -818,28 +1009,28 @@ button {
   align-items: center;
   justify-content: space-between;
   padding: 0 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--md-outline-variant);
   font-weight: 600;
 }
 
 .settingsAutosaveStatus {
   font-size: 12px;
   font-weight: 400;
-  color: var(--text-muted, #888);
+  color: var(--md-on-surface-variant);
 }
 
 .settingsStatus {
   padding: 8px 14px;
   font-size: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--md-outline-variant);
 }
 
 .settingsStatus.ok {
-  color: #7de3a0;
+  color: var(--md-success);
 }
 
 .settingsStatus.error {
-  color: #ff8080;
+  color: var(--md-error);
 }
 
 #settingsBody {
@@ -850,7 +1041,7 @@ button {
 
 .settingsSection {
   padding: 14px 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--md-outline-variant);
 }
 
 .settingsSection:last-of-type {
@@ -863,7 +1054,7 @@ button {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: color-mix(in srgb, var(--md-on-surface-variant) 75%, transparent);
 }
 
 .settingsRow {
@@ -873,17 +1064,17 @@ button {
   gap: 10px;
   padding: 5px 0;
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--md-on-surface-variant);
 }
 
 .settingsRow input[type="number"],
 .settingsRow input[type="text"],
 .settingsRow select {
   width: 9.5em;
-  background: var(--panel-alt);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--md-outline);
+  color: var(--md-on-surface);
+  border-radius: var(--shape-xs);
   padding: 5px 8px;
   font: inherit;
   font-variant-numeric: tabular-nums;
@@ -897,13 +1088,15 @@ button {
 .settingsRow input[type="text"]:focus,
 .settingsRow select:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--md-primary);
+  border-width: 2px;
+  padding: 4px 7px;
 }
 
 .settingsRow input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent);
+  accent-color: var(--md-primary);
 }
 
 .colorRow {
@@ -919,8 +1112,8 @@ button {
 .colorSwatch {
   width: 18px;
   height: 18px;
-  border-radius: 5px;
-  border: 1px solid var(--border);
+  border-radius: var(--shape-xs);
+  border: 1px solid var(--md-outline-variant);
   flex-shrink: 0;
 }
 
@@ -928,7 +1121,7 @@ button {
   margin: 16px 0 0;
   font-size: 11px;
   line-height: 1.5;
-  color: var(--text-faint);
+  color: color-mix(in srgb, var(--md-on-surface-variant) 75%, transparent);
 }
 
 .markerOverrideRow {
@@ -945,7 +1138,7 @@ button {
 .overrideToggle input[type="checkbox"] {
   width: 15px;
   height: 15px;
-  accent-color: var(--accent);
+  accent-color: var(--md-primary);
 }
 
 .closeMarkerPanel {

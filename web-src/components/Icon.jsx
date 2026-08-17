@@ -1,6 +1,7 @@
 import svgAdd from '@material-symbols/svg-400/outlined/add.svg?raw';
 import svgClose from '@material-symbols/svg-400/outlined/close.svg?raw';
 import svgContentCut from '@material-symbols/svg-400/outlined/content_cut.svg?raw';
+import svgDarkMode from '@material-symbols/svg-400/outlined/dark_mode.svg?raw';
 import svgDelete from '@material-symbols/svg-400/outlined/delete.svg?raw';
 import svgDownload from '@material-symbols/svg-400/outlined/download.svg?raw';
 import svgFastForward from '@material-symbols/svg-400/outlined/fast_forward.svg?raw';
@@ -9,6 +10,7 @@ import svgFitScreen from '@material-symbols/svg-400/outlined/fit_screen.svg?raw'
 import svgFlag from '@material-symbols/svg-400/outlined/flag.svg?raw';
 import svgGridGuides from '@material-symbols/svg-400/outlined/grid_guides.svg?raw';
 import svgGroup from '@material-symbols/svg-400/outlined/group.svg?raw';
+import svgLightMode from '@material-symbols/svg-400/outlined/light_mode.svg?raw';
 import svgLink from '@material-symbols/svg-400/outlined/link.svg?raw';
 import svgMovie from '@material-symbols/svg-400/outlined/movie.svg?raw';
 import svgPause from '@material-symbols/svg-400/outlined/pause.svg?raw';
@@ -25,6 +27,7 @@ const ICONS = {
   add: svgAdd,
   close: svgClose,
   content_cut: svgContentCut,
+  dark_mode: svgDarkMode,
   delete: svgDelete,
   download: svgDownload,
   fast_forward: svgFastForward,
@@ -33,6 +36,7 @@ const ICONS = {
   flag: svgFlag,
   grid_guides: svgGridGuides,
   group: svgGroup,
+  light_mode: svgLightMode,
   link: svgLink,
   movie: svgMovie,
   pause: svgPause,

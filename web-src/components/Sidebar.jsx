@@ -1,5 +1,7 @@
 import { For, createEffect, createSignal } from 'solid-js';
 import { formatTime } from '../lib/format.js';
+import { theme, toggleTheme } from '../lib/theme.js';
+import Icon from './Icon.jsx';
 
 export default function Sidebar(props) {
   const itemRefs = [];
@@ -23,7 +25,18 @@ export default function Sidebar(props) {
 
   return (
     <aside id="sidebar" style={{ width: `${props.width()}px` }}>
-      <div id="sidebarHeader">Lines</div>
+      <div id="sidebarHeader">
+        <span>Lines</span>
+        <button
+          type="button"
+          class="themeToggleBtn"
+          onClick={toggleTheme}
+          title={theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          aria-label="Toggle color theme"
+        >
+          <Icon name={theme() === 'dark' ? 'light_mode' : 'dark_mode'} />
+        </button>
+      </div>
       <ul id="cueList">
         <For each={props.cues}>
           {(cue, i) => (
