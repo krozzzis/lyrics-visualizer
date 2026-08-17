@@ -957,13 +957,6 @@ export default function Timeline(props) {
             {formatClock(props.currentTime())} / {formatClock(props.duration())}
           </span>
         </div>
-        <div class="headerRight">
-          <div class="zoomControls">
-            <button type="button" onClick={() => zoomBy(1 / 1.4)} title="Zoom out"><Icon name="remove" /></button>
-            <button type="button" class="fitBtn" onClick={fitToWidth} title="Fit whole track"><Icon name="fit_screen" />Fit</button>
-            <button type="button" onClick={() => zoomBy(1.4)} title="Zoom in"><Icon name="add" /></button>
-          </div>
-        </div>
       </div>
       <div id="timelineBody">
         <Show when={props.usingAudio}>

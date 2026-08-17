@@ -608,17 +608,6 @@ button {
   scrollbar-width: thin;
 }
 
-.headerRight {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-}
-
 .transportControls {
   display: flex;
   align-items: center;
@@ -753,46 +742,6 @@ button {
   border-color: var(--md-primary);
   border-width: 2px;
   padding: 2px 6px;
-}
-
-.zoomControls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.zoomControls button {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: var(--shape-full);
-  border: none;
-  background: var(--md-surface-container-highest);
-  color: var(--md-on-surface-variant);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  transition: background-color 0.12s ease, color 0.12s ease;
-}
-
-.zoomControls button:hover {
-  background: color-mix(in srgb, var(--md-surface-container-highest) 92%, var(--md-on-surface-variant));
-  color: var(--md-on-surface);
-}
-
-.zoomControls button .mdIcon {
-  width: 14px;
-  height: 14px;
-}
-
-.zoomControls .fitBtn {
-  width: auto;
-  padding: 0 10px;
-  gap: 4px;
-  font-size: 12px;
 }
 
 #timelineBody {

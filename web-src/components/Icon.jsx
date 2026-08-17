@@ -6,7 +6,6 @@ import svgDelete from '@material-symbols/svg-400/outlined/delete.svg?raw';
 import svgDownload from '@material-symbols/svg-400/outlined/download.svg?raw';
 import svgFastForward from '@material-symbols/svg-400/outlined/fast_forward.svg?raw';
 import svgFastRewind from '@material-symbols/svg-400/outlined/fast_rewind.svg?raw';
-import svgFitScreen from '@material-symbols/svg-400/outlined/fit_screen.svg?raw';
 import svgFlag from '@material-symbols/svg-400/outlined/flag.svg?raw';
 import svgGroup from '@material-symbols/svg-400/outlined/group.svg?raw';
 import svgLightMode from '@material-symbols/svg-400/outlined/light_mode.svg?raw';
@@ -15,7 +14,6 @@ import svgMagnet from '@material-symbols/svg-400/outlined/nest_cam_magnet_mount.
 import svgMovie from '@material-symbols/svg-400/outlined/movie.svg?raw';
 import svgPause from '@material-symbols/svg-400/outlined/pause.svg?raw';
 import svgPlayArrow from '@material-symbols/svg-400/outlined/play_arrow.svg?raw';
-import svgRemove from '@material-symbols/svg-400/outlined/remove.svg?raw';
 import svgSettings from '@material-symbols/svg-400/outlined/settings.svg?raw';
 import svgSkipNext from '@material-symbols/svg-400/outlined/skip_next.svg?raw';
 import svgSkipPrevious from '@material-symbols/svg-400/outlined/skip_previous.svg?raw';
@@ -32,7 +30,6 @@ const ICONS = {
   download: svgDownload,
   fast_forward: svgFastForward,
   fast_rewind: svgFastRewind,
-  fit_screen: svgFitScreen,
   flag: svgFlag,
   group: svgGroup,
   light_mode: svgLightMode,
@@ -41,7 +38,6 @@ const ICONS = {
   movie: svgMovie,
   pause: svgPause,
   play_arrow: svgPlayArrow,
-  remove: svgRemove,
   settings: svgSettings,
   skip_next: svgSkipNext,
   skip_previous: svgSkipPrevious,
