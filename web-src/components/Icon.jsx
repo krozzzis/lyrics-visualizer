@@ -54,8 +54,12 @@ const ICONS = {
 // import so the app stays fully offline (no icon-font/CDN fetch) — required
 // for the packaged Electron build. `fill` is left unset by the source SVGs,
 // so `.mdIcon svg { fill: currentColor }` in styles.css controls color.
+function svgFor(name) {
+  const svg = ICONS[name];
+  if (!svg) throw new Error(`Unknown icon: ${name}`);
+  return svg;
+}
+
 export default function Icon(props) {
-  const svg = ICONS[props.name];
-  if (!svg) throw new Error(`Unknown icon: ${props.name}`);
-  return <span class={props.class ? `mdIcon ${props.class}` : 'mdIcon'} innerHTML={svg} />;
+  return <span class={props.class ? `mdIcon ${props.class}` : 'mdIcon'} innerHTML={svgFor(props.name)} />;
 }
